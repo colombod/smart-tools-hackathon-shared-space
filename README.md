@@ -88,6 +88,16 @@ Add a row to the index below when you add a file.
 
 ---
 
+## Proposals
+
+Concrete changes, addressed to whoever owns the thing being changed.
+
+| File | To | What it asks for |
+|---|---|---|
+| [`proposals/intelligence-contract-carry-what-it-did.md`](proposals/intelligence-contract-carry-what-it-did.md) | [smart-tool-creator](https://github.com/DavidKoleczek/amplifier-smart-tool-creator) | `AgentResult` should carry `evidence` and `activity` — what the intelligence DID, not only what it said. An empty `activity` is how a tool detects that its own search silently failed |
+
+---
+
 ## Writing a finding that survives you
 
 The reader is someone who was not there and cannot ask you a follow-up.
