@@ -401,6 +401,94 @@ when the reasoning turns actually run (M3), and this section should be revisited
 
 ---
 
+## What measuring quality taught us, once we could measure it
+
+Everything above was learned by building. This section was learned by **evaluating** — and
+it changed our view of what a smart tool owes its caller more than anything else here.
+
+### Asking for a capability is not getting it — four times, one shape
+
+The single most repeated defect in this project, and the one we would most want another
+builder to be warned about:
+
+```
+provider credential present   →  but no client library installed
+tool in the mount plan        →  but never loaded (aiohttp → bs4 → ddgs, found one at a time)
+guard checking dependencies   →  checking a hard-coded list that rots
+guard reading the mount registry →  reading a registry that does not exist yet
+```
+
+The host engine logs a module that fails validation and **carries on without it**. That is a
+reasonable thing for a general-purpose agent host to do, and it is catastrophic for a smart
+tool, because a research agent with no search **does not fail**. It answers from memory and
+returns URLs it never opened. One of our live runs said, in its own words, *"No live access
+to the two listed sources"* while two sat in `sources.json` — reporting fabricated evidence
+in the voice of caution, and passing every downstream check because a source was *present*.
+
+We wrote the lesson down after the second occurrence and then repeated it twice more,
+including in a guard written specifically to fix that class. What finally worked was
+**changing the question**: not *"is search configured?"* but *"did search actually happen?"*
+— counted from the engine's own tool events. That needs no knowledge of anybody's dependency
+list, which is why the first two attempts rotted and this one has not.
+
+**For the spec:** a smart tool that composes a host's capabilities should be expected to
+assert its post-conditions on the **outcome**, not the request. We would support a
+conformance check along the lines of *"a capability the tool declares must be demonstrably
+exercised, or the tool must refuse"*.
+
+### An evaluation that cannot fail is decoration
+
+Both our harnesses have an **adversary mode** that returns deliberately wrong but
+*structurally valid* results — valid so they survive the tool's own validators and actually
+reach the scorer. It exists purely to prove the scorer bites.
+
+It earned its place immediately: it caught a **false pass in our own harness**, where a
+run that failed for mechanical reasons was being scored as an honest refusal. A refusal
+because the evidence was inadequate is an answer; a refusal because the machinery broke says
+nothing about the question. We had already drawn exactly that distinction inside `fact-check`
+and still failed to draw it in the harness we wrote immediately afterwards.
+
+**Per category, never one number.** Our first fixture set scored **14/14 on its first live
+pass** — which is not good news. No headroom means nothing can be tuned, because any change
+can only hold or regress. A second set whose evidence *contradicts itself* scored 8/12 and
+immediately exposed two real failure modes the clean set structurally could not see.
+
+### The worst failure makes your quality signals look better
+
+Asked about two things that **do not exist** — a language and a study we invented — our
+research tool gathered **30 and 27 real sources** and returned `confidence: high` for both.
+Nothing malfunctioned. Search returned plentiful, genuinely relevant material about adjacent
+real subjects, and the synthesis answered as though the subject were real.
+
+Those two runs had *more* sources, valid citations, fluent prose and higher confidence than
+the questions the tool got **right**. Every signal a careful reader would check pointed the
+wrong way.
+
+This is the one failure mode that cannot be found by reviewing output, however carefully.
+Only an input whose correct answer you already know will surface it. **We would urge the
+conformance kit, or at least the guidance, to treat "asked about something that does not
+exist" as a named test case for any tool that summarises retrieved evidence.**
+
+The fix was one paragraph in the synthesis prompt — *a search returns whatever is closest to
+a question, never proof the thing exists* — and it took `nonexistent` from 0/2 to 2/2 with
+no regression. The same 30 sources, the opposite conclusion about what they establish. **The
+defect was never in retrieval; it was in what the synthesis was willing to assume.**
+
+### Honesty about absence is not free
+
+That fix raised spend **41%** for the same six questions, because saying what the sources
+*do* cover takes more words than answering the question as asked. Worth knowing before
+anyone budgets for a tool that is expected to hedge well.
+
+And a related measurement, for anyone tempted by an intermediate "sharpen the question"
+stage: ours **doubled cost and wall-clock and changed no score** on well-formed questions —
+6/6 both ways, $0.63 against $0.31. More sources did not buy a better answer either; the
+cheaper arm gathered half as many for one question and reached the same conclusion. We have
+not yet tested the vague-question case the stage exists for, and we say so in the log rather
+than claiming a verdict we did not earn.
+
+---
+
 ## What we intend to feed back
 
 | ROADMAP item | What we will have to offer |
