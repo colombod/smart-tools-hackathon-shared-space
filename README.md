@@ -37,6 +37,28 @@ Things that do **not** belong here:
 
 ---
 
+## Build the tool before you write about it
+
+**[DavidKoleczek/amplifier-smart-tool-creator](https://github.com/DavidKoleczek/amplifier-smart-tool-creator)**
+— a smart tool for building smart tools. Start here rather than hand-rolling a skeleton:
+
+```bash
+uv tool install git+https://github.com/DavidKoleczek/amplifier-smart-tool-creator
+smart-tool-creator init my-tool --description "..." --skill
+```
+
+Measured on this hackathon: **5.2 seconds**, 27 files, committed git repository, environment
+synced, an Agent Skill written, the spec and SDKs shallow-cloned into `reference/` — and
+**15/15 on the conformance kit with zero domain code written**. Doing the equivalent by hand
+took a full milestone, and the write-up in
+[`findings/colombod-building-two-smart-tools.md`](findings/colombod-building-two-smart-tools.md)
+records both what it collapses and where it did not fit a two-root tool.
+
+Getting to conforming is the cheap part now. **Findings come from what you build on top of
+it**, so spend the time there.
+
+---
+
 ## Layout
 
 ```
