@@ -249,10 +249,25 @@ examples. These are the costs of following them, and none is written down anywhe
   use. Every test in the repository, including the ones that never touch a model.
   tmux-fleet hit this first and disables the plugin the same way. If this is the paved path,
   the pothole belongs on the map.
-- **The engine is heavy and git-only.** It pulls `amplifier-foundation`, the Rust-backed
-  `amplifier-core`, and a web-framework/ASGI stack the tool never uses — for both of our
-  tools, including for callers who only ever touch deterministic verbs. We made it an
-  extra so the weight is a visible decision rather than one that just happens.
+- **A credential is not a provider, and a mounted tool is not a loaded tool.** The engine
+  resolves providers by *credential presence* and ships **no provider client library at
+  all**, so preflight passed and the turn died at mount time with `No module named
+  'anthropic'`. With that fixed, `tool-web` failed validation for want of `aiohttp`; the
+  engine logged it and **carried on without it**, so the agent had no search and answered
+  from memory. Both dependencies are ours to declare, because nothing upstream brings them
+  and no extra offers them. The generalisable point: this engine **degrades rather than
+  fails**, so an integration must verify the post-condition — what actually mounted — and
+  never trust that asking worked.
+
+  *A note on what is NOT a finding here: the install is large (53 packages, 85 MB) and that
+  is correct. A smart tool ships its own intelligence; the "thin CLI" in the spec is about
+  where logic lives — in the library, not the wrapper — not about dependency footprint.
+  Weighing a complex intelligence service against a shell script's install size is a
+  category error, and we should not hand the spec's authors that frame. The one specific
+  oddity worth reporting is narrower: the engine brings `fastapi`, `uvicorn`, `starlette`
+  and `mcp` into a tool that never serves HTTP, plus duplicate `httpx`/`httpx2` and
+  `httpcore`/`httpcore2`. That is a remark about `amplifier-agent`'s own dependency graph,
+  not about smart tools being heavy.*
 - **An undeclared dependency is invisible to CI.** We installed the engine by hand, imported
   it, and declared it nowhere; the job that installs from git was structurally blind to it
   because it installs exactly what is declared. Not a spec issue — a lesson.
