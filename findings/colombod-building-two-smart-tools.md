@@ -489,6 +489,94 @@ than claiming a verdict we did not earn.
 
 ---
 
+## A proposal with evidence: a `skill` verb, and why `--help` is not enough
+
+**This is the finding we would most like the spec to consider adopting**, because unlike the
+rest of this document it comes with a measured A/B rather than an argument.
+
+### The observation
+
+`--help` is written for a person. Ours was a good one — 68 lines, verbs grouped, each marked
+`(deterministic)` or `MODEL-BACKED`, with sections on using the result and navigating a large
+one. It was also, we assumed, sufficient for an agent.
+
+A smart tool's whole premise is that **a caller states an intent and gets a structured result
+it can hand straight to code**. If the primary caller is an agent, then the tool's own
+description is an agent-facing interface — and we had never tested it as one.
+
+### The experiment
+
+Two sub-agents, **identical task, clean context, neither able to read source or search the
+web**. One was given only the `--help` text; the other only a `skill` document rendering the
+same tool as an [Agent Skill](https://agentskills.io/specification) — YAML frontmatter, then a
+markdown body with a `## Cost` section, a verb table marking each verb deterministic or
+model-backed, how to read the result, how to go deeper, and worked examples.
+
+Both were told: work out which verbs are free, **run only those**, price a low-depth run,
+explain how to read a large result without swallowing it, and say what `confidence` means.
+
+### The result
+
+| | `--help` | `skill` |
+|---|---|---|
+| LLM calls to finish | **16** | **8** |
+| free vs paid verbs | correct | correct — *"explicit and unambiguous"* |
+| cost of a low-depth run | $0.0405 | $0.0405 |
+| **what `confidence` means** | **could not answer** | **answered, with a remediation plan** |
+
+Both agents correctly refused to run the paid verb. Both priced the run. The split that
+`--help` already marked inline was understood by both.
+
+**The difference was interpretation.** The `--help` agent:
+
+> *"I could not find any mention of a `confidence` field anywhere in the documentation — I
+> grepped the doc text directly and it does not appear once… I don't know, and I would not
+> fabricate a scale or a remediation policy for a field the documentation never defines."*
+
+The `skill` agent:
+
+> *"One of `low`, `medium`, `high`… the doc says plainly 'when it says low, believe it.' If a
+> result came back `low`, I would **not** treat the brief as reliable enough to act on — I'd
+> pull `sources <id>` to see what was actually found, and tell the user the question isn't
+> well-supported by available evidence rather than passing along a shaky answer as fact."*
+
+### Why this matters more than the call count
+
+**`--help` told an agent how to CALL the tool. The skill told it how to BELIEVE the result.**
+
+An agent that cannot interpret `confidence` will present a low-confidence brief as fact. That
+is precisely the failure we spent a day eliminating *inside* the tool — and here it was,
+reappearing at the **consumption boundary**, in a tool that had already been fixed.
+
+The reason `--help` omitted it is instructive and not a mistake anyone would catch by
+re-reading: a human seeing `"confidence": "low"` in a JSON envelope knows what to do without
+being told. **The things a human reader supplies from common sense are exactly the things
+that must be written down for an agent.** No amount of care in writing human-facing help
+surfaces them, because to the writer they are not missing.
+
+Halving the LLM calls (16 → 8) is the secondary win, and it came from the explicit `## Cost`
+section: the agent did not have to spend turns reasoning about which verbs were safe.
+
+### What we would propose
+
+1. **A `skill` verb** — or an agreed flag — on every smart tool, emitting the tool as an
+   Agent Skill. Deterministic, credential-free, and cheap to implement: ours is one shared
+   renderer plus a per-tool description of its verbs and result contract.
+2. **The manifest already carries name, description and requires.** What it does not carry,
+   and what an agent most needs, is **how to interpret a result** — what the fields mean and
+   what a caller should DO about each value. We would suggest the spec name this explicitly
+   as something a tool must document, wherever it chooses to document it.
+3. **A conformance check worth considering:** a tool's agent-facing description must define
+   every field its result envelope can return. Ours would have failed that check, and the
+   failure would have been caught in seconds instead of by a two-agent experiment.
+
+Both agents independently found the same real gap in our own documentation — `classify`'s
+flag shape appears in neither document, so both discovered it by trial. That is worth saying
+plainly: **the experiment found defects in the thing being tested, which is the only reason to
+run an experiment at all.**
+
+---
+
 ## What we intend to feed back
 
 | ROADMAP item | What we will have to offer |
