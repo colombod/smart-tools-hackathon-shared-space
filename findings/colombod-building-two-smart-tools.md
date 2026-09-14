@@ -301,6 +301,41 @@ We have a working implementation of the first two and would happily donate the s
   reported no cost, so `usage.cost_usd` is `null` rather than a fabricated `0.00` — the
   honest-unknown convention with a real instance behind it.
 
+### Integrating two kinds of intelligence: the differences that mattered were not interface differences
+
+We ended up with two seams — one that acquires evidence (a research service, or an agent
+with web tools) and one that reasons over evidence already gathered (an agent with **no**
+tools). At arm's length they are the same shape: an intent in, a result plus a usage
+account out. We spent a design note deciding whether to collapse them into one `Agent`
+abstraction with a `can_search` capability flag, and **decided not to**.
+
+The reason is the transferable finding. **They do not differ in shape; they differ in
+authority** — in what each is permitted to introduce into the caller's world. A backend may
+bring new sources into a run. A reasoner may not, and that is the entire premise the
+citation check rests on: a synthesis citing `s9` when the run defines `s1`–`s3` is rejected
+and repaired, and the check only means anything because the synthesising turn *could not
+have found* `s9` itself. Merge the two and the result type grows an optional `sources`
+field — which is precisely the route by which a synthesis quietly introduces a citation
+nobody gathered. The type system makes that unrepresentable today; a capability flag would
+demote it to a configuration mistake, and configuration mistakes ship.
+
+**For ROADMAP #2 and #4:** an interface specification that describes only the call
+shape — arguments in, structure out — will produce tools that compile and lie. The
+load-bearing question when integrating intelligence is *what is this implementation
+allowed to introduce*, and that is not visible in a signature.
+
+**A second, narrower finding for #4: cost is not uniformly reportable.** Measured, not
+assumed — across two live implementations, one reported `cost_usd: null` because the
+service does not tell us, and the other reported `$0.041082`. Any provider interface should
+make **unknown** a first-class value rather than letting `0.00` stand in for it, and should
+let a caller discover which kind it is dealing with *before* spending. We report `null` and
+say out loud that it means unreported, which only works because the tool knows which
+implementation ran — a merged abstraction would have taken that away.
+
+The full argument, including the strongest case against our decision and why
+reversibility settled it, is in the tool repo:
+[`docs/DESIGN-NOTE-one-abstraction.md`](https://github.com/colombod/amplifier-smart-tools-research/blob/main/docs/DESIGN-NOTE-one-abstraction.md).
+
 ---
 
 ## Friction on the paved path
