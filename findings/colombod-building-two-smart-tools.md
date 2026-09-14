@@ -324,13 +324,38 @@ shape — arguments in, structure out — will produce tools that compile and li
 load-bearing question when integrating intelligence is *what is this implementation
 allowed to introduce*, and that is not visible in a signature.
 
-**A second, narrower finding for #4: cost is not uniformly reportable.** Measured, not
-assumed — across two live implementations, one reported `cost_usd: null` because the
-service does not tell us, and the other reported `$0.041082`. Any provider interface should
-make **unknown** a first-class value rather than letting `0.00` stand in for it, and should
-let a caller discover which kind it is dealing with *before* spending. We report `null` and
-say out loud that it means unreported, which only works because the tool knows which
-implementation ran — a merged abstraction would have taken that away.
+**A second finding for #4, and it begins with us being wrong.** We previously reported here
+that cost is not uniformly reportable — that one of our two backends simply could not tell
+us what a call cost, on the strength of `cost_usd` coming back `null` on live runs.
+
+**That was our parsing bug, not the service's limitation.** Perplexity reports spend in
+*more* detail than our agent backend does:
+
+```
+cost.total_cost               0.0166 USD
+cost.tool_calls_cost_details  {fetch_url: 0.01017, search_web: 0.0025}
+```
+
+plus input, output and cache costs separately, and invocation counts per tool. We were
+reading a flat `cost_usd` field that does not exist on that response shape, finding nothing,
+and recording `null`. Every call was invisible in our own accounting while the caller was
+genuinely being billed — and a comment in our code explained that `null` "means unreported",
+documenting our own bug as a property of somebody else's service.
+
+**What survives is a better finding.** The real variable is not *whether* spend is
+reportable but **when it becomes knowable**. An agent running inside a turn we watch reports
+per call, as it happens. A service that owns its own search loop can only account
+afterwards, in one block. An interface modelling only a final total cannot express live
+spend; one modelling only a stream cannot express a service that answers in one shot. Both
+of ours now replay their work as the same kind of tool event, so a caller sees the searches
+and fetches either way.
+
+**And a sharper lesson than either, which we would offer to the conformance kit:** an
+integration should verify it can read a provider's *accounting* the same way it verifies it
+can read the *answer*. We had a test asserting `null` meant "unreported". It passed
+throughout, on a value produced entirely by our own bug. A tool that cannot see what it
+spends is not merely untidy — it cannot honour the spec's own requirement to fail loudly
+about cost, because it does not know.
 
 The full argument, including the strongest case against our decision and why
 reversibility settled it, is in the tool repo:
