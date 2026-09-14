@@ -13,9 +13,26 @@ actually run.
 
 Everything here was learned by reading the spec and the two reference implementations, or by
 building against them. Where a claim rests on something you can check, the check is named.
+
+**Every section below opens with its evidence tier.** We added these after noticing that nine
+of eleven sections carried no measurement and yet read with the same authority as the two that
+did — the exact failure our own tools exist to prevent, committed in the document arguing for
+preventing it. The tiers:
+
+| tier | means |
+|---|---|
+| **MEASURED** | a before/after or A/B we actually ran, with the figures and their sample size |
+| **OBSERVED** | something we read in source or watched happen; true, but not a measurement |
+| **JUDGMENT** | an argued call. The reasoning is shown; the other arm was not built |
+| **PROPOSAL** | a design we have not implemented or measured. An argument, nothing more |
+
+Read a PROPOSAL as an invitation to disagree. Read MEASURED with its sample size attached —
+almost all of ours are **N=1 per arm**.
 ---
 
 ## What we read
+
+**Evidence: OBSERVED** — read from the spec, the ROADMAP and the two reference implementations' source. Nothing measured; nothing needs to be.
 
 | Source | Depth |
 |---|---|
@@ -34,6 +51,8 @@ own `sample-good` fixture have inspectable code.
 ---
 
 ## Gap 1 — nobody handles a large result
+
+**Evidence: OBSERVED** — read from both reference tools' source. This is an absence we looked for and did not find, not a measurement of anything.
 
 **Not on the ROADMAP.** The spec is silent, and no example addresses it.
 
@@ -62,6 +81,8 @@ Nothing in the spec or the conformance kit penalises this.
 
 ## Gap 2 — nobody handles a long-running call
 
+**Evidence: OBSERVED** — as Gap 1. Our own long-call handling below is built, but the claim *here* is about what the reference tools do.
+
 **ROADMAP #1.** Acknowledged open, unaddressed by every example.
 
 - tmux pins the engine's display to `verbosity="quiet"` and wraps exactly one turn in a
@@ -81,6 +102,8 @@ returning a handle to poll, is the stronger version and is in our backlog rather
 ---
 
 ## Divergences worth knowing
+
+**Evidence: OBSERVED** — read from source, side by side. Where the two reference tools disagree is a fact about them; what the spec *should* say about it is our opinion.
 
 **The output envelope is not one convention.** `sample-good`, tmux and DTU all use
 `{"result": ...}` / `{"error": {"code", "message", "remedy"}}` — three independent
@@ -121,6 +144,8 @@ spec; the worked multi-file example is in tmux and DTU, not in the fixture.
 
 ## Attractor — assessed, declined
 
+**Evidence: JUDGMENT** — a design decision with its reasons written down. We did not build the other arm, so this is an argued call and not a finding.
+
 The `attractor-expert` agent fails to load in this workspace
 (`system-attractor-expert.md` missing from the dot-runner bundle cache), so the engine
 was read directly instead.
@@ -160,6 +185,8 @@ already-completed or mismatched checkpoint) and its event vocabulary (`node_star
 ---
 
 ## What building it actually taught us
+
+**Evidence: MIXED** — most items are OBSERVED (what the code did when we ran it, including live runs with figures quoted inline). The generalisations drawn from them are JUDGMENT. Each item names which it is where the distinction matters.
 
 Everything above came from reading. This section came from building, and it is the part
 no amount of reading produces.
@@ -365,6 +392,8 @@ reversibility settled it, is in the tool repo:
 
 ## Friction on the paved path
 
+**Evidence: OBSERVED** — things that actually happened to us while building, reported as incidents. How representative they are of anyone else's experience is unmeasured.
+
 Relevant to ROADMAP #2, which currently delegates "how intelligence gets integrated" to the
 examples. These are the costs of following them, and none is written down anywhere.
 
@@ -402,6 +431,8 @@ when the reasoning turns actually run (M3), and this section should be revisited
 ---
 
 ## What measuring quality taught us, once we could measure it
+
+**Evidence: MEASURED** — live before/after on named fixture sets, every figure from a recorded run in `evaluation/results/`. **N=1 per arm**: run-to-run variance is unmeasured, and a model changes underneath you without telling you.
 
 Everything above was learned by building. This section was learned by **evaluating** — and
 it changed our view of what a smart tool owes its caller more than anything else here.
@@ -491,6 +522,8 @@ than claiming a verdict we did not earn.
 
 ## A proposal with evidence: a `skill` verb, and why `--help` is not enough
 
+**Evidence: MEASURED** — a live A/B with two sub-agents, identical task, clean context. **N=1 per arm**, one tool, one model. The direction of the difference is clear; the magnitude (16 vs 8 calls) should not be quoted as a rate.
+
 **This is the finding we would most like the spec to consider adopting**, because unlike the
 rest of this document it comes with a measured A/B rather than an argument.
 
@@ -578,6 +611,8 @@ run an experiment at all.**
 ---
 
 ## A second proposal: let a host answer "can I use this?" BEFORE installing
+
+**Evidence: PROPOSAL — none.** Not implemented and not measured. The *problem* it describes is OBSERVED (our manifest really does declare requirements only in prose) and the caveat about static-versus-verified is MEASURED, in the sense that the failure it warns about actually bit us. The proposed schema itself is an argument, and should be read as one until somebody builds it.
 
 A concrete companion to the `skill` proposal above, and the same shape of problem — the
 tool knows something a host needs, and has no machine-readable way to say it.
@@ -681,6 +716,8 @@ leaving it out.
 ---
 
 ## What we intend to feed back
+
+**Evidence: SUMMARY** — a routing list, not a claim. Each item's evidence is whatever its own section carries.
 
 | ROADMAP item | What we will have to offer |
 |---|---|

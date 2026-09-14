@@ -20,6 +20,33 @@ spec opinion with no implementation behind it is not a deliverable.
 If you are asked to record something you cannot back, **say so and record the gap** rather
 than writing it as though you could.
 
+### Open every section with its evidence tier
+
+Not all evidence is the same strength, and a reader cannot tell by looking. We added these
+after noticing that nine of eleven sections in the first findings file carried no measurement
+and still read with exactly the same authority as the two that did — which is the failure our
+own tools exist to prevent, committed in the document arguing for preventing it.
+
+So each `##` section opens with one line:
+
+```
+**Evidence: MEASURED** — live before/after on <fixture>, figures from <path>. N=1 per arm.
+```
+
+| tier | means |
+|---|---|
+| **MEASURED** | a before/after or A/B you actually ran, with the figures **and their sample size** |
+| **OBSERVED** | something you read in source or watched happen; true, but not a measurement |
+| **JUDGMENT** | an argued call. Show the reasoning; say that the other arm was not built |
+| **PROPOSAL** | a design not implemented or measured. An argument, nothing more |
+
+**Always attach the sample size to a MEASURED claim.** Almost everything any of us can run in
+a hackathon is N=1 per arm, and a figure quoted without that turns into a rate somebody else
+will plan against.
+
+A PROPOSAL section is welcome — it is how a design gets argued — but label it, so nobody
+quotes it as a result.
+
 ---
 
 ## What belongs here
