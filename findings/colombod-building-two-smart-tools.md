@@ -715,6 +715,133 @@ leaving it out.
 
 ---
 
+## Measured against the Smart Tool Creator: what we would adopt, and what does not fit
+
+**Evidence: MEASURED** — ran `smart-tool-creator init` and the conformance kit against its
+output, on this machine, today. **N=1**, one scaffold, one language target (`uv-python`),
+one intelligence target (`copilot-sdk`). The structural comparison against our own tools is
+OBSERVED; the judgments about fit are JUDGMENT and marked where they appear.
+
+[DavidKoleczek/amplifier-smart-tool-creator](https://github.com/DavidKoleczek/amplifier-smart-tool-creator)
+is a smart tool for building smart tools. We ran it to find out how much of our path it
+collapses, and what of ours it is missing.
+
+### What one command produced
+
+```
+$ time smart-tool-creator init release-notes --description "..." --skill
+Scaffolded release-notes at /tmp/cx1/release-notes
+  27 files written as a uv-python tool with copilot-sdk intelligence,
+  committed to a new git repository with no remote
+  environment synced: `uv run release-notes manifest` works from that directory
+  Agent Skill at skills/release-notes/SKILL.md
+  reference/ holds shallow clones of amplifier-smart-tools, copilot-sdk, agentskills
+
+real    0m5.230s
+```
+
+Conformance kit against that scaffold, **with zero domain code written**:
+
+```
+PASS {'pass': 15, 'fail': 0, 'skip': 0}
+```
+
+**Our M0 — reaching the same 15/15 — was an entire milestone.** Stated fairly, the targets
+differ: we built two distribution roots sharing one library in a monorepo plus CI, and `init`
+produces one standalone tool with no remote. But the part that is genuinely like-for-like —
+*a conforming skeleton that passes the kit* — went from a milestone to **5.2 seconds**.
+
+A caveat we hit in both directions: the kit reported `10 pass / 5 skip` until the tool was on
+`PATH`. The five runtime checks **skip rather than fail** when the binary is not resolvable.
+That is the same silent-skip trap we recorded earlier about `manifest-version-matches-package`,
+and it bit us twice today — once on our own repo, once on this scaffold. A skip reads like a
+pass at a glance.
+
+### Where we independently arrived at the same answer
+
+The strongest signal in this comparison is not a difference — it is a convergence:
+
+```
+smart-tool-creator -h        terse summary for a person
+smart-tool-creator --help    the tool's skill, written for an agent driving it
+```
+
+**That is the design we reached separately** and wrote up above, with an A/B behind it. Two
+builders solving it the same way, in the same week, without coordinating, is worth more than
+either of us asserting it — and our measurement (16 vs 8 LLM calls; the `--help` agent unable
+to say what `confidence` meant) is evidence for a decision he had already made on instinct.
+
+Two more convergences: the skill is a **first-class library capability** (`core/skill.py`),
+not CLI text; and the intelligence sits **behind a Protocol** with a `default_intelligence()`
+factory — the same split our design note argued for.
+
+### What we would adopt from it, and are missing
+
+| | why |
+|---|---|
+| **`reference/` shallow clones** | the spec, the SDK and the skills spec sitting in the repo. We fetched these by hand all session |
+| **`AGENTS.md` + `CONTRIBUTING.md` from minute zero** | ours were never written; a contributor gets nothing |
+| **pre-commit config and a `setup-for-dev.py`** | our dev loop lives in a findings file and my memory |
+| **`--help` as the skill** | ours is a `skill` VERB. His is better for discovery: an agent runs `--help` reflexively and will never guess a verb it has not been told about |
+| **A committed `uv.lock`** | ours is not committed |
+
+The `--help` one is the most actionable, and it is a **JUDGMENT that our choice was worse**.
+We reasoned that a host looking for the skill should find it in the verb list. But a host that
+does not know the tool at all reaches for `--help` first, and ours answers that with prose.
+
+### What would NOT work in ours, and why
+
+**1. One intelligence seam, where we found two.** His `Intelligence` Protocol is
+`preflight()` plus `run(AgentRequest) -> AgentResult` — an agent runner. Our design note
+(above) concluded that evidence *acquisition* and *reasoning* are different seams: Perplexity
+is not an agent SDK, it is a research service that owns its own search loop and returns
+sources. It has no system prompt, no tool list, and no turn we control. **A single
+agent-runner Protocol cannot express it** — you would have to model the whole service as one
+opaque `run()` and lose the sources, the per-call accounting and the citation structure that
+our entire citation-validation spine depends on.
+
+This is the most useful thing we can hand back: *the interface is right, and one of it is not
+enough.* A scaffold that offers `--intelligence copilot-sdk | amplifier-agent` is offering a
+choice of **agent SDK**; a research service is a different kind of dependency and wants its
+own seam.
+
+**2. Single-root layout.** `init` makes one tool per repository. We deliberately ship two
+distribution roots over one shared `research-core`, which is what lets `fact-check
+--from-run` read evidence `deep-research` already gathered instead of paying to gather it
+again. Adopting the scaffold layout would mean splitting the repo and losing the shared
+library, or diverging from the template immediately.
+
+**3. `preflight()` raises; our `check` returns data.** His contract raises an error naming
+what to configure. Ours is a deterministic *verb* returning structured per-requirement state
+with provenance, which a host can read **without catching an exception** and before deciding
+to call anything. JUDGMENT: ours is more useful to a host, his is simpler for the library,
+and they are not mutually exclusive — a tool can do both.
+
+### What the creator is missing that we measured
+
+Stated as what a **scaffold default** could carry, since a scaffold settles conventions by
+default rather than by argument — whatever `init` emits becomes the norm long before a spec
+catches up.
+
+- **The scaffolded `SKILL.md` has `## Install` and `## Use it` and nothing else.** No section
+  for what the result MEANS. That is precisely the gap we measured: an agent that can call
+  perfectly and misread the answer. A template heading — *"Reading the result: every field
+  your envelope can return, and what a caller should do about each value"* — would propagate
+  the fix to every tool ever scaffolded.
+- **The scaffolded tests cover `manifest` and `skill` only.** Nothing asserts the tool
+  verifies its capability actually *ran*. Our four same-shaped defects all had that
+  signature, and the check that finally held counts tool events and refuses when there are
+  none.
+- **Evaluation is a stated goal, not a shipped command** (`manifest` and `init` are what the
+  CLI carries today). When it lands, three properties decide whether it is a harness or
+  decoration: an **adversary mode**, **per-category** scores rather than one number, and a
+  fixture with headroom — ours scored 14/14 on its first pass and could not discriminate.
+- **The nonexistent-subject test case.** For any tool that summarises retrieved evidence, we
+  would argue this belongs in the scaffold: ask about something that does not exist. It is
+  the one failure where every quality signal points the wrong way.
+
+---
+
 ## What we intend to feed back
 
 **Evidence: SUMMARY** — a routing list, not a claim. Each item's evidence is whatever its own section carries.
