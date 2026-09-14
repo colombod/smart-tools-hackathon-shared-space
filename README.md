@@ -15,6 +15,10 @@ shape someone can read without having been there.
 
 ---
 
+> **Working here with an AI agent?** [`AGENTS.md`](AGENTS.md) carries the conventions in a
+> form your agent will pick up automatically: the evidence bar, the naming rule, how to
+> write a finding that survives its author, and what not to do.
+
 ## What belongs here
 
 Things that are **about the spec**, learned by building:
@@ -36,10 +40,15 @@ Things that do **not** belong here:
 ## Layout
 
 ```
+AGENTS.md    conventions, in the form an AI agent picks up automatically
 findings/    one file per person per body of work
 proposals/   concrete changes to the spec or the conformance kit
 evidence/    artifacts a finding rests on — transcripts, outputs, run directories
 ```
+
+Two standing rules worth knowing before you add anything: **never edit someone else's
+findings file** — write your own and reference theirs — and **nothing with a secret in it**,
+since private is not the same as safe.
 
 **Name your file `findings/<you>-<what-you-built>.md`.** One file per person per body of
 work, rather than a shared document, so nobody has to merge prose with anybody and a
