@@ -577,6 +577,109 @@ run an experiment at all.**
 
 ---
 
+## A second proposal: let a host answer "can I use this?" BEFORE installing
+
+A concrete companion to the `skill` proposal above, and the same shape of problem — the
+tool knows something a host needs, and has no machine-readable way to say it.
+
+### The question a host actually asks
+
+*"I have `PERPLEXITY_API_KEY` set. Can I use this Perplexity-powered tool?"*
+
+That is the decision every host, catalog browser and orchestrator makes before touching a
+tool. Today a smart tool can only answer it **after** being installed and run.
+
+### What we ship today, and where it stops
+
+`check` answers it well — structured, per-requirement, with provenance:
+
+```json
+{"name": "perplexity",   "state": "satisfied", "detail": "resolved from $PERPLEXITY_API_KEY"}
+{"name": "ai-provider",  "state": "satisfied", "detail": "$ANTHROPIC_API_KEY, client library present for anthropic"}
+```
+
+But the **manifest** — the thing a catalog can read without installing anything — declares
+requirements only in prose:
+
+```json
+{"name": "ai-provider", "optional": true,
+ "purpose": "...Any one of ANTHROPIC_API_KEY, OPENAI_API_KEY, GOOGLE_API_KEY,
+             GEMINI_API_KEY or AZURE_OPENAI_API_KEY satisfies it..."}
+```
+
+A host cannot evaluate that. It can only read English and guess — at exactly the moment it
+most wants certainty, because nothing is installed yet.
+
+### The shape we would propose
+
+Two fields on `requires[]`, both small and closed:
+
+```yaml
+requires:
+  - name: perplexity
+    optional: true
+    satisfied_by:
+      any_of:
+        - {kind: env,  name: PERPLEXITY_API_KEY}
+        - {kind: file, path: ~/.config/amplifier-research/credentials.toml, mode: "0600"}
+    enables: [research]          # what you LOSE without it
+    purpose: "..."               # unchanged, for humans
+    install: docs/CONFIGURATION.md
+```
+
+and the symmetric half, so the loop closes:
+
+```yaml
+capabilities:
+  - {name: research, cost: model-backed,  requires: [perplexity, ai-provider]}
+  - {name: read,     cost: deterministic, requires: []}
+```
+
+A host now computes, **with nothing installed**: evaluate `satisfied_by` against its own
+environment, derive exactly which capabilities are available. `kind` needs only a handful of
+values — `env`, `file`, `command`, `package` — and `any_of` / `all_of` covered every case we
+met.
+
+**`enables` is the load-bearing field, not `satisfied_by`.** "Requirement unsatisfied" is not
+actionable. *"You lose `research`; you keep `read`, `sources`, `render` and `list`"* is the
+decision a host is actually making, and it is the same information the spec already asks a
+tool to put in `purpose` — just in a form something can act on.
+
+### The caveat that must be in the schema, because our own bugs prove it
+
+**A static declaration PREDICTS. Only running `check` VERIFIES.** We have the scar tissue:
+
+```
+ANTHROPIC_API_KEY present   →  satisfied_by would say YES
+anthropic package absent    →  reality said NO
+```
+
+That exact case cost us a debugging session. A `satisfied_by` expressing only `kind: env`
+would have told a host "you can use this" and been **confidently wrong**. So:
+
+- `kind: package` must be expressible, and a credential requirement almost always needs
+  `all_of: [env-or-file, package]` rather than the env var alone.
+- **The spec should name the two states distinctly** — `predicted` (static, from the
+  manifest) versus `verified` (from running `check`). A host may *plan* on the first; it must
+  not *promise* on it.
+
+This is the same lesson as the "asking for a capability is not getting it" section above,
+promoted to schema level. Four defects in this project had that one shape: something declared
+present but not actually usable, with nothing noticing. A static `satisfied_by` is that trap
+made official — which is an argument for **naming it a prediction in the schema**, not for
+leaving it out.
+
+### Two smaller things we would change in our own tool regardless
+
+- **`check` should report `enables` whether or not a requirement is satisfied.** Ours sets
+  `lost_without_it: null` when satisfied, which wastes the field — a host wants the gating
+  map at all times, not only when something is broken.
+- **`credential_surfaces` belongs in the manifest, not only in `check`.** A host that knows a
+  tool has a `perplexity` surface can pre-fill it from a credential store it already manages,
+  before the tool is ever run.
+
+---
+
 ## What we intend to feed back
 
 | ROADMAP item | What we will have to offer |
