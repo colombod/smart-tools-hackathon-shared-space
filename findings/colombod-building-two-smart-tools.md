@@ -256,7 +256,20 @@ Amplifier session was model-backed while `deep-research check` inside it correct
 `ai-provider: absent`, because the key lived in the host's settings file and the tool reads
 only the environment and its own credentials file.
 
-We think **automatic** piggybacking is wrong and that the spec should say so:
+**And it turns out it is already happening, invisibly, in one direction.** With every
+`*_API_KEY` scrubbed from the environment, our embedded engine still reported `anthropic`
+usable — because the engine IS the host's own library (`amplifier-agent`) and resolves the
+host's credentials directly. So the agent-backed paths of our tool piggyback on Amplifier's
+configuration automatically, whether we asked or not, while the Perplexity path does not
+and cannot. Our own `check` verb was reporting `ai-provider: absent` about a path that
+works, because it asked our environment instead of asking the thing that runs the turn.
+
+That asymmetry is worth the spec's attention on its own: **embedding a host's agent library
+silently inherits that host's credential resolution.** A tool author who reasons about
+"my configuration" will get this wrong, in both directions — claiming absent when a turn
+would run, and being surprised when a credential they never configured turns out to work.
+
+We think **automatic** piggybacking we *choose* is wrong and that the spec should say so:
 
 - A smart tool is host-agnostic by definition — *"consumable anywhere: Copilot, Claude Code,
   a Python service, a shell script"*. Reading one host's private config file makes it that
@@ -265,9 +278,13 @@ We think **automatic** piggybacking is wrong and that the spec should say so:
   The user configured that key for Amplifier, not for whatever Amplifier happened to invoke.
 - It is a private format belonging to another project, free to change without notice.
 
-**Explicit opt-in** is the defensible middle: a setting a user deliberately turns on that
-says "also look in this host's configuration". It removes the double-configuration
-annoyance without making the tool secretly host-coupled.
+**Explicit opt-in** is the defensible middle for the part we control: a setting a user
+deliberately turns on (`host_config`, unset by default) that says "also look in this host's
+configuration". It removes the double-configuration annoyance without making the tool
+secretly host-coupled. What we could not opt out of is the engine's own resolution — that
+comes with embedding it, and the honest response was to make `check` report where a
+credential actually came from rather than pretend the tool's own environment is the whole
+story.
 
 **What would settle it.** Any of these would be an improvement on silence: a named
 convention (`~/.config/<tool>/config.toml` plus `<TOOL>_CONFIG`), a required precedence
