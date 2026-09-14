@@ -216,17 +216,64 @@ run is about to fail.
 **Also cheap to add:** `install` is checked not to be a command, but nothing checks the
 document it points at exists. A dangling pointer is handed to someone who is already stuck.
 
-### Configuration: the spec is silent, and TOML has no null
+### How does a smart tool find its configuration? Nothing says, and the two examples disagree
 
-We adopted tmux-fleet's model (argument > config file > environment > default, config above
-environment) and hit a wall the borrowed design did not have: tmux uses JSON, which has
-`null`, so it can distinguish absent from an explicit "no opinion" from wrong-type. **TOML
-cannot express null.** The trichotomy collapses to two cases.
+This is the largest unaddressed gap we hit, and unlike the others it is not a rule that
+goes unchecked — there is no rule.
 
-The tempting fix — `depth = ""` as a stand-in — destroys the very thing the distinction
-exists for, since an empty string becomes simultaneously "no opinion" and "a wrong value".
-We corrected the documentation instead. Worth carrying into any configuration guidance the
-spec eventually offers.
+**The spec is silent.** Searching the whole of `spec/` for configuration guidance returns
+nothing: no config-file location, no precedence, no environment-variable naming convention,
+no XDG mention. Every occurrence of "configured" is about *whether a provider's credentials
+exist*, never about *how a tool discovers any of its settings*.
+
+**The two reference tools resolve it differently, and neither documents it in its manifest.**
+
+| | tmux-fleet | digital-twin-universe |
+|---|---|---|
+| Config file | `~/.config/tmux-fleet/config.json`, path overridable by `TMUX_FLEET_CONFIG` | **none at all** |
+| Settings | file, with env override | environment variables only (`AMPLIFIER_DTU_PROVIDER`, `AMPLIFIER_DTU_MODEL`, `AMPLIFIER_DTU_MAX_ENVIRONMENTS`) |
+| Declared in `SMART_TOOL.md`? | credentials mentioned; the config file is **not** | configuration **not mentioned** |
+
+So a caller installing two conforming smart tools must discover two unrelated
+configuration systems by reading source, and the manifest — the one file the spec designates
+for telling a caller what a tool needs — describes neither.
+
+**What we did, and the wall we hit.** We took tmux's shape (argument > config file >
+environment > default, with config deliberately *above* environment) and inverted it for
+credentials only (environment first, then a 0600-fenced file). Then TOML bit us: tmux uses
+JSON, which has `null`, so it can distinguish absent from an explicit "no opinion" from
+wrong-type. **TOML cannot express null**, so that trichotomy collapses to two cases. The
+tempting fix — `depth = ""` as a stand-in — destroys the distinction it was meant to
+preserve, since an empty string becomes simultaneously "no opinion" and "a wrong value". We
+corrected our documentation rather than fake the capability.
+
+**The related question nobody has answered: may a smart tool read its host's config?**
+
+Concretely: Amplifier keeps provider credentials in `~/.amplifier/settings.yaml`. A smart
+tool invoked from an Amplifier session could read it and spare the user configuring the
+same key twice. We observed the boundary holding by accident during a container test — an
+Amplifier session was model-backed while `deep-research check` inside it correctly reported
+`ai-provider: absent`, because the key lived in the host's settings file and the tool reads
+only the environment and its own credentials file.
+
+We think **automatic** piggybacking is wrong and that the spec should say so:
+
+- A smart tool is host-agnostic by definition — *"consumable anywhere: Copilot, Claude Code,
+  a Python service, a shell script"*. Reading one host's private config file makes it that
+  host's tool.
+- Silently inheriting a credential from another application's file is a security surprise.
+  The user configured that key for Amplifier, not for whatever Amplifier happened to invoke.
+- It is a private format belonging to another project, free to change without notice.
+
+**Explicit opt-in** is the defensible middle: a setting a user deliberately turns on that
+says "also look in this host's configuration". It removes the double-configuration
+annoyance without making the tool secretly host-coupled.
+
+**What would settle it.** Any of these would be an improvement on silence: a named
+convention (`~/.config/<tool>/config.toml` plus `<TOOL>_CONFIG`), a required precedence
+order, a rule that a tool's configuration surface be declared in its manifest the way
+`requires` declares prerequisites, or an explicit statement on host-config piggybacking.
+We have a working implementation of the first two and would happily donate the shape.
 
 ### Two conventions now have working evidence rather than a proposal
 
@@ -299,6 +346,8 @@ These are the ones with a concrete shape, ordered by how cheap they look to add:
 | `install` must point at a document that exists | it is checked not to be a command; a dangling pointer is handed to someone already stuck | one file-exists check per entry |
 | a tool must be able to report whether its own prerequisites are present | the spec says detection is the tool's job and then never checks it happens | needs a convention for the verb first |
 | every CLI verb has a library equivalent | the rule is called absolute, nothing checks it, and the spec's own fixture does not demonstrate it | hard to check generically; publishing the test pattern may be the realistic version |
+| a tool declares its configuration surface in `SMART_TOOL.md` | the spec says nothing about configuration lookup and the two reference tools disagree completely — one has a config file, the other has none, and neither declares it | a manifest field plus a presence check; the harder half is agreeing the convention first |
+| a statement on whether a tool may read its host's configuration | a smart tool that reads `~/.amplifier/settings.yaml` silently becomes an Amplifier tool, which contradicts "consumable anywhere" | prose, not a check — but it decides whether piggybacking is a feature or a defect |
 
 ### How we deliver this
 
