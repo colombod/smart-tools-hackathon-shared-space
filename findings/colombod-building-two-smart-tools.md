@@ -1157,20 +1157,55 @@ The second is the only part that needs a convention at all, and the convention i
 *a smart tool that produces durable output should give it an id, and accept that id from
 another tool.*
 
+### Our own tools do not need this, and that is the useful part
+
+We were about to wire stdin. We are not going to, and the reason is worth more than the feature
+would have been.
+
+**Our two tools already compose, and a pipe would add nothing.** They share a runs directory,
+their outputs are large and durable, and `--from-run` moves a 12KB source list by reference
+instead of by value. Piping the content would be strictly worse. So for this pair, the honest
+answer is that handle composition is not a fallback for the async case — it is simply the right
+mechanism, and the pipe is the thing we do not need.
+
+That inverts the question usefully. Rather than *should smart tools read stdin*, ask **what
+makes a tool need a pipe at all**:
+
+| a tool composes by HANDLE when | a tool needs a PIPE when |
+|---|---|
+| it writes durable output somewhere both parties can reach | it produces a value, not an artifact |
+| its output is large, or partial, or not finished yet | its output is small and complete |
+| it shares a substrate with the next tool — same runs directory, same store | the next tool is **somebody else's**, with no shared store |
+| it is one of a family built together | it is a stateless transform: classify, translate, extract, reshape |
+
+**The shared substrate is what removes the need for a pipe.** Two tools that agree on a place
+to look do not need to move bytes between them. Two tools that do not — different authors,
+different machines, nothing in common but a terminal — have the pipe and nothing else.
+
+Our tools are the first column. A great many smart tools will be the second, and **those are the
+ones the spec should be thinking about**, because they are the ones with no other option. A
+stateless classifier that cannot be piped into is a tool that can only ever be driven by a
+harness, one call at a time, with every intermediate landing in an agent's context.
+
 ### The question for the spec
 
-**Not "what protocol should smart tools speak to each other" — they should speak Unix.** The
-question is narrower and more answerable: *should a smart tool be required to read stdin, and
-should a tool with durable output be required to expose a handle for it?*
+Narrower than a protocol, and in two parts:
 
-Our position, held lightly because we have not measured it: **yes to both, and nothing more
-than that.** Everything else is a protocol nobody asked for, and the failure mode of protocols
-in this space is that each tool ends up needing to understand every other tool's envelope —
-coupling by another name.
+1. **Should a smart tool whose output is a value be able to read stdin?** Our position, held
+   lightly: yes, and via ordinary Unix rather than anything designed. A tool that reads stdin
+   when given stdin can be composed by every harness that already exists.
+2. **Should a tool whose output is durable expose a handle for it?** Yes — and that is the part
+   we *have* built and can point at, because it is what lets a 384-line source list move between
+   two tools without entering anyone's context.
 
-We have one working instance of handle-based composition (`--from-run` over a shared runs
-directory) and **zero** of pipe-based composition, because we never wired stdin. That asymmetry
-is the honest summary of where we are.
+Neither needs a protocol. The failure mode of designing one here is that each tool ends up
+needing to understand every other tool's envelope, which is coupling by another name.
+
+**What we can and cannot claim.** We have one working instance of handle composition
+(`--from-run` over a shared runs directory) and **zero** of pipe composition. We are not
+building the second, because our tools genuinely do not need it — and a feature we would not
+use is a feature we could not honestly evaluate. The observation stands on the reasoning above,
+not on a measurement, and it is offered as food for thought rather than a recommendation.
 
 ---
 
