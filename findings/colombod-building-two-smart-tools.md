@@ -842,6 +842,85 @@ catches up.
 
 ---
 
+## What hypermedia already settled, and what of it survives an AI consumer
+
+**Evidence: OBSERVED** — a live `deep-research` run over 54 sources (`dr-56f6e5ec`, medium
+confidence, $0.30681, 5m10s), read through the tool's own navigation. The survey findings are
+as well-grounded as its citations; the judgments about what transfers to an agent consumer are
+**JUDGMENT**, and marked.
+
+Our tools return a brief plus a pointer, with a `next` block of follow-up commands. We invented
+that. The problem it solves — a client discovering how to traverse a resource it cannot hold —
+is one the web spent twenty years on, so we asked what was already settled. **We ran the
+question through our own tool**, which is the least we owe a research tool.
+
+### What the formats actually do
+
+| | how a client learns what it may do next |
+|---|---|
+| **HAL** | `_links` only: relation → Link Object. **No action construct**; method and body semantics live out-of-band in documentation or a framework |
+| **JSON:API** | navigational `links` only (self, related, pagination). No action object — and their own issue tracker shows this debated as a **known, unresolved gap**, not an oversight |
+| **Siren** | **the one format that formally separates the two**: `links` (rel + href) and `actions` (parameterised, with fields) |
+| **Hydra** | RDF `operation` objects |
+| **Collection+JSON** | query/template objects carrying parameters |
+
+Two answers we expected to be settled and are not: **no format mandates IANA-registered
+relations**, and for a result whose total size is unknown until traversed, all of them simply
+emit a next-link until it is absent, **with no required count**.
+
+### The eight failure modes practitioners actually report
+
+Ignored controls and hardcoded paths · generic hypermedia clients never materialising · the
+relation vocabulary becoming an undocumented coupling point · weak tooling and code generation ·
+payload bloat and extra round trips · affordances going stale between generation and invocation ·
+teams cutting back to a minimal subset · and `204 No Content` **breaking the interaction loop,
+because a response with no representation carries no links**.
+
+### The inversion, and it is the finding
+
+**Half of that list is about a consumer we are not.**
+
+Failure modes 1, 2 and 4 all describe *human developers writing compiled clients*: they read the
+docs and hardcode endpoints, nobody builds the generic client, and the tooling favours fixed
+contracts. **An agent consumer inverts every one of them.** It re-reads the affordances on every
+call, has no compiled client to regenerate, and cannot hardcode a path it was never told. The
+central historical criticism of HATEOAS — *the generic client never showed up* — reads very
+differently when **the generic client is exactly what an agent is.**
+
+But two transfer, and hard:
+
+- **The vocabulary is an undocumented coupling point.** An agent still has to know what
+  `read_report` *means*. Affordances in the response are necessary and not sufficient; their
+  semantics have to live somewhere the agent reads. That is precisely the job of the skill
+  document — which we can now say is not a nice-to-have but **the half of the design hypermedia
+  never solved**.
+- **`204 No Content` breaks the loop.** Directly applicable: **our refusals must still carry
+  navigation.** A run that fails with `NoEvidence` today returns an error envelope and no way
+  onward, which is the same defect in a different costume.
+
+And one is a validated target rather than a warning: teams that kept hypermedia **kept `self`,
+pagination, and a small set of state-dependent actions** and dropped the rest. That is roughly
+the shape we arrived at independently, and it is the shape that survived contact with
+production.
+
+### What we are taking
+
+**Siren's separation of links from parameterised actions**, because our `next` entries are
+commands with arguments, not URLs — they were always actions, and we had no name for that.
+**Nothing from the RDF or registered-vocabulary direction**: rejected, because the coupling it
+removes is one an agent that reads a fresh skill on every call does not have, and it buys that
+at a cost in payload and tooling the practitioners were right about.
+
+### A note on the run itself
+
+Mid-run, the tool **rejected one of its own claims**: *"no source in the provided list directly
+supports it as an independent, attributable finding; it is unsupported by the given evidence and
+is not asserted here."* Our citation validation caught a fabrication inside our own design
+research, on a topic where a plausible-sounding generalisation would have passed any human read.
+That is the first time the discipline paid for itself on something other than a fixture.
+
+---
+
 ## What we intend to feed back
 
 **Evidence: SUMMARY** — a routing list, not a claim. Each item's evidence is whatever its own section carries.
