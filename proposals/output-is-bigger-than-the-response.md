@@ -168,6 +168,12 @@ refusal is a response, and a response owes the caller a next move.
 3. **Require cost and size before commitment** on anything a caller can fetch.
 4. **Require a growing/final/dead distinction** on anything detachable. This one is not
    ergonomics — without it, async is strictly worse than blocking.
+   *To be precise about what is being asked:* the obligation is that a caller can find out
+   whether work is still happening. **How a tool spells that is its own business** — we are not
+   proposing `--detach` as a standard flag, and we have one implementation, which is nowhere
+   near enough to standardise a name from. The line we would draw: standardise what **arrives**
+   (response fields a host must parse), not what you **send** (flags, which every smart tool
+   already documents for itself in its skill).
 5. **Require a refusal to carry affordances**, for the same reason `204` was a mistake.
 
 And a conformance check that would have caught our own defect: **every response a tool can
