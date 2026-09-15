@@ -1055,6 +1055,91 @@ caught anything measures its author, not the tool.
 
 ---
 
+## Open question: who does the chaining?
+
+**Evidence: OBSERVED** for what our tools do and do not support today, verified by running
+them. **PROPOSAL** for everything after that — not implemented, not measured. Raised as food
+for thought rather than a recommendation.
+
+Right now, when an agent wants `deep-research` and then `fact-check`, **the harness is the
+thing doing the chaining.** It makes one tool call, receives a result, holds it in context,
+decides what to extract, and makes a second call. Two round trips, and the intermediate data
+sits in the agent's context whether or not it is ever read again.
+
+That is the same context problem the `parts` proposal addresses, one level up. We spent this
+project making a single result navigable without flooding a caller. **Composition is that
+problem across tools instead of within one.**
+
+### What already works, and it is the interesting half
+
+```bash
+fact-check check-claims --from-run dr-56f6e5ec --claim "..."
+```
+
+`--from-run` lets one tool consume another's evidence **without the harness carrying it**. The
+run directory is the hand-off, so 384 lines of sources move between two tools and never enter
+the agent's context at all. That was built for cost — not re-paying for evidence — and the
+composition property was a side effect we did not design for.
+
+The general shape worth noticing: **a shared, durable, addressable substrate is what lets two
+tools compose without a broker.** Not a pipe, not an API — a place both agree to look.
+
+### What does not work, and the gap is specific
+
+We checked. **Nothing in either tool reads stdin.** Every verb takes flags only. So chaining
+two of our CLIs today means surgery on the envelope:
+
+```bash
+deep-research research --query "..." \
+  | jq -r .result.run_id \
+  | xargs -I{} fact-check check-claims --from-run {} --claim "..."
+```
+
+That works, and it is not something an agent should have to invent. The `run_id` is buried in
+a JSON envelope, so the pipe needs a JSON tool in the middle, and the caller must already know
+that `--from-run` is the flag that accepts it.
+
+### The two forms, and neither should be second-class
+
+**Library composition** works today and is the cleaner of the two — `import deep_research,
+fact_check`, call one, pass what you want to the other. Anyone embedding these in an
+application already has it.
+
+**CLI composition** is where the value is for a harness, precisely because a single `bash` call
+running a pipeline is **one tool call instead of N**, with the intermediate data never touching
+the agent's context. That is a large win and we do not support it properly.
+
+### What a convention might look like
+
+Three possibilities, and we have implemented none of them:
+
+- **A tool accepts the previous tool's whole envelope on stdin** and finds what it needs. No
+  `jq`, no knowledge of which field matters. The cost: every tool must understand every other
+  tool's envelope shape, which is coupling by another name.
+- **A tool emits a bare handle on a separate stream or flag** — `--print-run-id`, or the id on
+  stdout with the envelope on stderr. Cheap, ugly, and it fights the "one JSON document on
+  stdout" rule we adopted deliberately.
+- **The affordances already say it.** Our envelopes carry `affordances` with ready-to-run
+  `command` strings. A convention could state that those commands are **composable** — that a
+  caller may take one, substitute its own arguments, and run it. We would be formalising
+  something the response already contains rather than adding a mechanism.
+
+The third is the one we would explore first, because it costs nothing new and because an
+affordance that names a command is already halfway to a pipeline stage.
+
+### The question for the spec
+
+**Is composition a smart tool's concern at all, or is it the host's?** A reasonable answer is
+that hosts chain things and tools should stay simple. But the cost of that answer is a round
+trip and a context window per hop, and for tools whose outputs are large — which the proposal
+above argues is the normal case — those costs are exactly the ones worth designing away.
+
+We do not have a measurement here. What we have is one working instance of composition without
+a broker (`--from-run` over a shared runs directory), and the observation that it happened by
+accident while we were solving something else.
+
+---
+
 ## What we intend to feed back
 
 **Evidence: SUMMARY** — a routing list, not a claim. Each item's evidence is whatever its own section carries.
