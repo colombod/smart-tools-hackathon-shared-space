@@ -921,6 +921,140 @@ That is the first time the discipline paid for itself on something other than a 
 
 ---
 
+## Building the pattern: what we learned implementing it on ourselves
+
+**Evidence: MEASURED** for the figures below — live evaluation runs, a live A/B, and a real
+process killed mid-flight, each cited with its numbers. **N=1 per arm** throughout. The
+generalisations after each result are **JUDGMENT**.
+
+We proposed a `parts` vocabulary to the spec (`proposals/output-is-bigger-than-the-response.md`)
+and then implemented it in our own tools. Building it taught us more than designing it did.
+
+### A refusal is a response, and ours were dead ends
+
+The sharpest transferable lesson from the hypermedia survey was `204 No Content`: a response
+carrying no representation carries no way onward. **Our refusals had exactly that defect** — a
+`NoEvidence` returned an error envelope and stranded the caller.
+
+Now every refusal carries typed affordances. Verified with no model and no credential:
+
+```
+refused: no_evidence
+  check    $0.00  deep-research check              / deep_research.check()
+  status   $0.00  deep-research status dr-e1f19ba2 / deep_research.status(...)
+  list     $0.00  deep-research list               / deep_research.list_runs()
+```
+
+Two constraints that only became obvious once we built it. **Every affordance offered on a
+refusal must be free and credential-free** — a caller that has just been refused may be on a
+host with nothing configured, and offering it something it cannot run is offering it nothing.
+And **both invocation forms must be carried**, because the library is the tool: a library
+caller reading a shell command would have to shell out to follow its own tool's advice.
+
+### The generality test passed by being boring
+
+A vocabulary invented for research reports that needs special-casing to describe a thumbnail is
+research plumbing with a general name on it. So we expressed an image response with the same
+types — `thumbnail` / `web` / `original` at 18KB, 240KB and 21MB — and asserted the thing the
+whole design exists for: **an agent can decide it does not want 21MB without fetching 21MB.**
+
+It passed on the first run and **that is the result**. Not that it works, but that no type
+needed changing. Had it wanted one `if media_type ==` branch, we would have known.
+
+### Size and time are one problem, and the proof is a `kill -9`
+
+`--detach` returns **part one in 0.1 seconds**: the run id, where the rest appears, and an
+explicit `not_yet_true` list, because an accepted request looks a great deal like an answer if
+nobody says otherwise.
+
+Rejoining a real 120-second run:
+
+```
+t+20s   growing   stage=scope       0/4  poll_in=10
+t+80s   growing   stage=synthesise  2/4  poll_in=10
+t+120s  final     stage=None        4/4  poll_in=None
+```
+
+Then we detached a run and killed the child mid-gather:
+
+```
+record status : running     <-- the stale state that would strand a caller forever
+LIVENESS      : abandoned
+why           : the run record says 'running' but process 325830 is gone, so nothing
+                is going to finish it. Whatever reached disk is all there will be.
+```
+
+**The record still says `running`, and always will.** A process that dies never writes its own
+epitaph. Every status field in a system like this is written by something that has to survive
+to write it — which means the one state you most need to detect is the one state nothing can
+report. Liveness had to come from outside the record entirely.
+
+**This is the part of the proposal we would defend hardest.** Without it, detaching is strictly
+worse than blocking: a caller polls forever for a result that is never coming. PID reuse is a
+known hole and we say so rather than implying more certainty than we have.
+
+### The skill measurement, repeated — and what it found this time
+
+An agent given **only** the skill, and a 78-line report over 384 lines of sources:
+
+```
+status dr-56f6e5ec      1 line
+read --lines 40         partial: "38 lines sit beyond this window"
+read --lines 78         complete
+```
+
+It called `status` first as taught, treated the completeness block as an instruction — *"I
+treated that as an explicit instruction not to answer from the partial slice"* — and **never
+touched `sources.json` at all.**
+
+But it also found a real defect, and the defect's shape is the finding. Our completeness note
+says *"ask for specific `--sections`"*. The flag **exists and works**. The skill never mentioned
+it. So the agent followed our advice exactly as written and could not comply.
+
+**Nothing was broken. No test could have failed.** The defect lived entirely in the gap between
+two documents that were each correct on their own. No amount of re-reading either would have
+surfaced it — only putting an agent in front of them with a real task did.
+
+### A run directory is a public surface, so name it like one
+
+A second tool reads ours via `--from-run`, and so does any agent handed a `path`. Three rules:
+**the extension says HOW to read it** (`.json` one document, `.jsonl` append-only lines, `.md`
+prose, `.log` unstructured with no schema promised); **the name says WHAT it is** (singular for
+the thing, plural for a collection); **a subdirectory says WHOSE it is** (`raw/` holds somebody
+else's bytes, verbatim).
+
+Two consequences we hold to: **`.log` is the only file with no schema**, so anything code must
+read never gets that extension; and **`run.json` is the only file rewritten**, so a reader
+racing a writer sees a whole earlier version rather than half of a newer one.
+
+Writing the rule down exposed three artifacts — `scope.json`, `attempts.json`, `detached.log` —
+that existed and were documented nowhere.
+
+### The evaluation, since a tool nobody measured is a tool nobody should trust
+
+All four modes, both tools:
+
+```
+                 oracle        adversary     live
+fact-check       14/14 = 1.0   0/14 = 0.0    14/14 = 1.0   $0.053388   129.9s
+deep-research      6/6 = 1.0    0/6 = 0.0      6/6 = 1.0   $0.654096   601.5s
+```
+
+**Adversary mode is the one that matters** — deliberately wrong but structurally valid answers.
+A harness still scoring well there measures nothing. Both drop to exactly zero.
+
+Per category, never one number, and two integrity counters scored separately because an
+aggregate would bury them: **dangling citations: 0** (no marker pointed at a source the run did
+not have) and **asserted falsehood from absence: 0** (not once did "no evidence for X" become
+"X is false").
+
+The row carrying the most weight is `nonexistent 2/2`. **It was 0/2 before the hallucination
+fix.** A green row there is not "the tool works" — it is "the defect we introduced is still
+gone". The fixtures worth keeping are the ones that once failed; a suite of cases that never
+caught anything measures its author, not the tool.
+
+---
+
 ## What we intend to feed back
 
 **Evidence: SUMMARY** — a routing list, not a claim. Each item's evidence is whatever its own section carries.
