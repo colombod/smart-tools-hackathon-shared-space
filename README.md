@@ -95,6 +95,7 @@ Concrete changes, addressed to whoever owns the thing being changed.
 | File | To | What it asks for |
 |---|---|---|
 | [`proposals/intelligence-contract-carry-what-it-did.md`](proposals/intelligence-contract-carry-what-it-did.md) | [smart-tool-creator](https://github.com/DavidKoleczek/amplifier-smart-tool-creator) | `AgentResult` should carry `evidence` and `activity` — what the intelligence DID, not only what it said. An empty `activity` is how a tool detects that its own search silently failed |
+| [`proposals/output-is-bigger-than-the-response.md`](proposals/output-is-bigger-than-the-response.md) | the spec | A smart tool's output routinely exceeds its response and the caller's context. Proposes one `parts` vocabulary covering size, time and fidelity — a proxy you can act on, a cost-declared fidelity ladder, affordances with meaning, and a growing/final/**dead** distinction for detached calls |
 
 ---
 
