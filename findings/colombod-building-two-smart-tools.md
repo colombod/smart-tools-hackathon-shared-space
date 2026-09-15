@@ -1109,34 +1109,68 @@ application already has it.
 running a pipeline is **one tool call instead of N**, with the intermediate data never touching
 the agent's context. That is a large win and we do not support it properly.
 
-### What a convention might look like
+### The answer is probably Unix, not a protocol
 
-Three possibilities, and we have implemented none of them:
+Our first instinct was to design a convention — a handshake, an envelope contract, affordance
+commands declared composable. On reflection that is the wrong shape. **Unix solved this, and
+anything we invent will be worse than what already works.**
 
-- **A tool accepts the previous tool's whole envelope on stdin** and finds what it needs. No
-  `jq`, no knowledge of which field matters. The cost: every tool must understand every other
-  tool's envelope shape, which is coupling by another name.
-- **A tool emits a bare handle on a separate stream or flag** — `--print-run-id`, or the id on
-  stdout with the envelope on stderr. Cheap, ugly, and it fights the "one JSON document on
-  stdout" rule we adopted deliberately.
-- **The affordances already say it.** Our envelopes carry `affordances` with ready-to-run
-  `command` strings. A convention could state that those commands are **composable** — that a
-  caller may take one, substitute its own arguments, and run it. We would be formalising
-  something the response already contains rather than adding a mechanism.
+A pipe carries bytes. A tool reads stdin when it is given stdin. That is the whole mechanism,
+it is forty years old, and every harness on earth can already drive it:
 
-The third is the one we would explore first, because it costs nothing new and because an
-affordance that names a command is already halfway to a pipeline stage.
+```bash
+deep-research research --query "..." | fact-check check-claims --claim "..."
+```
+
+Nothing in that line needs a new protocol. It needs one thing we do not currently do: **read
+stdin when there is something on it.** We checked — neither tool does. That is the gap, and it
+is a small one.
+
+The reason this matters for a harness is arithmetic. A pipeline is **one tool call instead of
+N**, and the intermediate data never touches the agent's context. Not because we designed a
+clever hand-off, but because that is what a pipe has always done.
+
+### Where a pipe genuinely cannot reach, and only there
+
+Two cases where piping the content is the wrong move, and a **handle** is the right one:
+
+- **The output is not finished.** You cannot pipe a result that does not exist yet. A detached
+  run returns in 0.1 seconds with an id and nothing else worth piping.
+- **The output is too large to be worth moving**, or the downstream tool needs only part of it.
+  Our 384-line source list is a poor thing to push through a pipe so the next tool can read
+  three entries.
+
+For those, pass the **run id** and let the downstream tool resolve it against the shared runs
+directory — which is exactly what `--from-run` already does, and which worked before we thought
+of it as composition.
+
+This is not a new idea either. **Unix does the same thing**: you pipe data when data is the
+right thing to move, and you pass a *filename* when it is not. A run id is a filename with a
+tool-shaped name on it.
+
+```
+small, complete, synchronous   →  pipe the content          ordinary Unix
+large, partial, or in flight   →  pipe the handle           --from-run <id>
+```
+
+The second is the only part that needs a convention at all, and the convention is one sentence:
+*a smart tool that produces durable output should give it an id, and accept that id from
+another tool.*
 
 ### The question for the spec
 
-**Is composition a smart tool's concern at all, or is it the host's?** A reasonable answer is
-that hosts chain things and tools should stay simple. But the cost of that answer is a round
-trip and a context window per hop, and for tools whose outputs are large — which the proposal
-above argues is the normal case — those costs are exactly the ones worth designing away.
+**Not "what protocol should smart tools speak to each other" — they should speak Unix.** The
+question is narrower and more answerable: *should a smart tool be required to read stdin, and
+should a tool with durable output be required to expose a handle for it?*
 
-We do not have a measurement here. What we have is one working instance of composition without
-a broker (`--from-run` over a shared runs directory), and the observation that it happened by
-accident while we were solving something else.
+Our position, held lightly because we have not measured it: **yes to both, and nothing more
+than that.** Everything else is a protocol nobody asked for, and the failure mode of protocols
+in this space is that each tool ends up needing to understand every other tool's envelope —
+coupling by another name.
+
+We have one working instance of handle-based composition (`--from-run` over a shared runs
+directory) and **zero** of pipe-based composition, because we never wired stdin. That asymmetry
+is the honest summary of where we are.
 
 ---
 
