@@ -1430,6 +1430,107 @@ requirement**, and it is cheap: each of these runs cost cents and minutes.
 
 ---
 
+## The async path, finally driven by a host — and what it cost us to find out
+
+**Evidence: MEASURED.** One real detached run, `dr-82baa98f`, driven end to end by Claude Code
+2.1.263. Every number below is from its run record.
+
+Until this run, **no host had ever driven a detached run.** Zero existed on disk. We had tested
+the *decision* twice — one host reached for `--detach` when told its timeout was 120 seconds,
+another correctly declined it because the estimate was 60 — and we had tested the *mechanism*
+never. The rejoin loop had only ever been exercised by a human in a shell.
+
+**The gap stayed invisible because our test question was cheap.** Depth low on a well-covered
+topic lands at 57 seconds: under the estimate, inside any host's timeout. The runs that would
+*need* detach are the 400–800 second ones, and we never handed a host one. **A convenience
+feature is only exercised by the workload that makes it necessary**, so a suite built on fast
+cases reports the slow-path machinery as untested-but-fine indefinitely.
+
+### It worked, across thirteen separate commands
+
+The task estimated 300 seconds against a hard 120-second command limit, so blocking was not
+merely unwise — it was impossible. The run actually took **784 seconds**.
+
+```
+launch    --detach returns a run id in ~1s
+poll      9 loops, each a SEPARATE command
+read      brief, then the report
+total     13 commands, answer returned, never blocked
+```
+
+That multi-call survival is exactly what a plan cannot verify. A plan *describes* a loop; a run
+has to *survive* one.
+
+### It invented something we had not documented
+
+Our skill says to poll and to wait `poll_again_in_seconds`. **It does not say how to wait when
+the host's own call limit is shorter than the interval you were told to wait.** Claude Code
+solved that alone:
+
+> *"polled `deep-research status` in bash loops capped at 9 iterations of 10 seconds, each
+> finishing in under 100 seconds and breaking early on a final state."*
+
+A bounded inner loop inside one tool call, sized to stay under the ceiling. It also used the dead
+time — *"every poll loop also did one free side task, such as checking the worker process,
+listing artifacts, or dumping the source list."*
+
+**That is a documentation gap we would not have found by reading.** The polling contract is
+complete from the tool's side and incomplete from the host's, and only a host with a real
+constraint could show us the difference.
+
+### The bill was 6.3x the estimate, and the reason is worse than volume
+
+```
+estimated   $0.1605    300s    34 sources
+actual      $1.0087    784s    69 sources
+```
+
+The obvious explanation — twice the evidence — is not the main one. `attempts.json`:
+
+```
+synthesise  attempt 1   REJECTED   "no JSON document was found in the reply"   $0.384519
+            attempt 2   REJECTED   "no JSON document was found in the reply"
+            attempt 3   accepted
+```
+
+**Roughly three quarters of that run bought nothing.** The retry machinery worked exactly as
+designed, the caller got a correct answer, and that is precisely the problem: **the result
+envelope reports one cost number and gives no hint that most of it was spent on discarded work.**
+Only `attempts.json` records it, and nothing points a caller there.
+
+Two separate defects, and they should not be fixed together:
+
+- **Reliability.** Synthesis failing to emit parseable JSON two times out of three at
+  `depth=high` is a defect in the prompt or the extractor, not bad luck. The cheap runs never hit
+  it, which is why a year of green tests would not have found it.
+- **Honesty.** *"This run cost $1.01"* and *"this run cost $1.01, of which $0.77 was thrown
+  away"* are different facts, and only the second lets a caller act. Our envelope tells the
+  first.
+
+### What this does to our own cost-estimate proposal
+
+We have argued to the spec that a tool should **declare cost before a caller commits**. We still
+believe it, and this run sharpens it: our estimator was **2x low** on a cheap run and **6.3x
+low** here. It is systematically optimistic, and retries are a reason it cannot simply be tuned —
+**a point estimate cannot know how many attempts a stage will need.**
+
+So the honest refinement to our own proposal: a tool should declare cost *and the shape of its
+uncertainty*. A single number implies a precision nobody can deliver. A range, or an explicit
+"this may retry and you will be billed for the attempts", is a promise a tool can keep.
+
+### The other thing the run surfaced, unprompted
+
+The report flagged that **its own scope stage had overreached** — the sharpening step added Figma
+and Notion to the question, and neither had usable evidence; Notion appeared in no source at all.
+The tool told the end user that part of the question it had invented could not be answered,
+rather than answering it thinly.
+
+That is the behaviour we most wanted and least directly built. We built citation integrity and
+honest confidence; **the tool applied them to its own reasoning stage**, through a host we did
+not design for, and the caveat reached a human.
+
+---
+
 ## What we intend to feed back
 
 **Evidence: SUMMARY** — a routing list, not a claim. Each item's evidence is whatever its own section carries.
