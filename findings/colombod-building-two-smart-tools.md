@@ -1209,6 +1209,69 @@ not on a measurement, and it is offered as food for thought rather than a recomm
 
 ---
 
+## The `-h` / `--help` split is a gesture, and a gesture has to hold everywhere
+
+**Evidence: MEASURED** for the original A/B (16 vs 8 LLM calls) and **OBSERVED** for
+everything after — each defect below was found by running the tool, and every line count is
+real output.
+
+We adopted the split from the Smart Tool Creator after measuring our own choice and finding it
+worse: **`-h` is the terse table for a person, `--help` is the document for an agent.** Then we
+applied it to the root command and stopped.
+
+`deep-research research -h` and `deep-research research --help` were **identical** — 35 lines
+of argparse table. An agent drilling into a specific verb, which is the natural move when
+deciding *how* to call something, got a flag reference instead of an explanation.
+
+### This is the same defect three times
+
+| what happened | how it was found |
+|---|---|
+| Our completeness note told callers to use `--sections`; the skill never mentioned it | an agent followed our advice and **could not comply** |
+| `--no-scope` shipped with carefully measured help text; invisible in the skill | asked "is this clear in the skill?" and checked |
+| Every subcommand answered an agent with an argparse table | asked "does this hold for subcommands?" and checked |
+
+Each time a capability was **present in the tool and undiscoverable by its consumer**. Each
+time a green test suite. The test written after the *first* occurrence was called
+`test_the_skill_documents_every_flag_our_own_messages_advertise` and asserted that one flag
+appeared — **it passed on the commit that introduced the second occurrence.** A test named for
+a class that checks an instance is worse than no test: it occupies the slot where the real
+check would go.
+
+### What we now hold to
+
+**The split is a gesture, not a feature of the root command.** `-h` always means *terse, for a
+person who already knows this*. `--help` always means *the agent-facing document for whatever
+scope you asked about*. At the root that scope is the tool; at a verb it is that verb — what it
+does, **whether it spends money**, every flag and what it is *for*, and how to read the result.
+
+Every verb now answers differently:
+
+```
+manifest  -h=9   --help=14      research  -h=37  --help=31
+config    -h=17  --help=20      check     -h=14  --help=18
+status    -h=13  --help=18      classify  -h=10  --help=18
+```
+
+**And the root skill must say the deeper documents exist.** An overview that does not mention
+them hides them — which is the same defect once more. Ours now tells an agent: *this document
+covers the tool; every verb has its own, ask `<verb> --help` when you are about to call
+something.*
+
+### Two implementation notes that are the difference between a fix and a fuse
+
+**Wire it as a post-pass, not at each call site.** Ours walks the subparser set, removes
+argparse's single `-h/--help` action and installs two that differ. Our verbs are created in two
+places — some per-tool, some in a shared package — and more importantly **a verb added next
+year inherits the behaviour without anyone remembering.** A fix that depends on the next author
+remembering is the same defect with a longer fuse.
+
+**Enumerate in the test; never spot-check.** Ours walks every verb of every tool and asserts
+`-h` starts with `usage:` while `--help` starts with `---`. Naming one case is precisely how
+the second and third occurrences got through.
+
+---
+
 ## What we intend to feed back
 
 **Evidence: SUMMARY** — a routing list, not a claim. Each item's evidence is whatever its own section carries.

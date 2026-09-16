@@ -50,6 +50,30 @@ A heading in the template — *"Reading the result: every field your envelope ca
 what a caller should do about each value"* — propagates that fix to every tool ever scaffolded,
 at the cost of one line.
 
+### 1b. The `-h` / `--help` split, wired at every level and enforced by enumeration
+
+The creator already ships the split at the root, and that is the design we adopted after
+measuring our own worse choice. What a scaffold could add is the part we got wrong: **make it a
+gesture rather than a feature of the root command.**
+
+`-h` always means terse-for-a-person. `--help` always means the agent-facing document for
+whatever scope was asked about — the tool at the root, **that verb at a subcommand**. Ours
+answered an agent with an argparse table at every verb until we checked.
+
+Three things worth generating, and the second two are what make it stick:
+
+- **A per-verb document**, rendered from the subparser the author already wrote: what the verb
+  does, whether it **spends money**, each flag and what it is *for*, how to read the result.
+- **Wiring as a post-pass** over the subparser set, so a verb added later inherits it. A fix at
+  each call site depends on the next author remembering, which is the same defect with a longer
+  fuse.
+- **A generated test that enumerates**: every verb's `-h` and `--help` must differ, and the
+  root skill must point at per-verb `--help`. We had a test for this class that checked a
+  single instance, and it passed green on the commit that introduced the next occurrence.
+
+**An overview that does not mention the deeper documents hides them** — the root skill should
+tell an agent to ask a verb directly.
+
 ### 2. A generated test that the capability actually RAN
 
 **Our most repeated defect, four separate times**: something was *declared* present and was
