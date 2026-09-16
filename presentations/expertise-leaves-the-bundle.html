@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Expertise Leaves the Bundle</title>
+<style>
+    :root {
+        --accent-color: #5E5CE6;
+        --accent-dim: rgba(94,92,230,0.35);
+
+        --font-headline: clamp(34px, 7vw, 68px);
+        --font-medium-headline: clamp(24px, 4.5vw, 44px);
+        --font-subhead: clamp(16px, 2.6vw, 26px);
+        --font-big-number: clamp(48px, 14vw, 130px);
+
+        --padding-slide: clamp(20px, 5vw, 80px);
+        --gap-grid: clamp(16px, 3vw, 36px);
+
+        --surface-1: rgba(255,255,255,0.06);
+        --surface-2: rgba(255,255,255,0.10);
+        --surface-3: rgba(255,255,255,0.15);
+        --border-subtle: rgba(255,255,255,0.12);
+        --border-visible: rgba(255,255,255,0.20);
+
+        --text-primary: #ffffff;
+        --text-secondary: rgba(255,255,255,0.7);
+        --text-tertiary: rgba(255,255,255,0.5);
+
+        --fs-small: clamp(12px, 1.8vw, 14px);
+        --fs-body: clamp(14px, 2vw, 16px);
+        --radius-sm: clamp(8px, 1vw, 12px);
+        --space-lg: clamp(24px, 4vw, 40px);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+        background: #000;
+        color: #fff;
+        overflow: hidden;
+        overscroll-behavior: none;
+    }
+
+    .slide {
+        display: none;
+        width: 100vw;
+        min-height: 100vh;
+        min-height: 100dvh;
+        padding: clamp(60px, 10vw, 110px) var(--padding-slide) clamp(80px, 12vw, 100px);
+        flex-direction: column;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    .slide.active { display: flex; }
+
+    .center {
+        text-align: center;
+        align-items: center;
+        justify-content: center;
+    }
+
+    @media (max-height: 500px) and (orientation: landscape) {
+        .slide { padding: 16px var(--padding-slide) 60px; }
+        .slide.center { justify-content: flex-start; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .slide, .slide * { animation: none !important; transition: none !important; }
+    }
+
+    .section-label {
+        font-size: var(--fs-small);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: var(--accent-color);
+        margin-bottom: clamp(10px, 2vw, 18px);
+    }
+
+    .headline {
+        font-size: var(--font-headline);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        line-height: 1.12;
+        color: var(--text-primary);
+        max-width: 1100px;
+    }
+
+    .medium-headline {
+        font-size: var(--font-medium-headline);
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        line-height: 1.18;
+        color: var(--text-primary);
+        max-width: 1000px;
+    }
+
+    .subhead {
+        font-size: var(--font-subhead);
+        color: var(--text-secondary);
+        font-weight: 400;
+        max-width: 820px;
+        margin-top: clamp(14px, 2.5vw, 22px);
+        line-height: 1.5;
+    }
+
+    .small-text {
+        font-size: var(--fs-small);
+        color: var(--text-tertiary);
+        margin-top: clamp(18px, 3vw, 30px);
+    }
+
+    .badge {
+        display: inline-block;
+        font-size: var(--fs-small);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: #30D158;
+        background: rgba(48,209,88,0.12);
+        border: 1px solid rgba(48,209,88,0.4);
+        border-radius: 999px;
+        padding: 6px 16px;
+        margin-top: clamp(16px, 3vw, 24px);
+    }
+
+    .body-text {
+        font-size: var(--fs-body);
+        color: var(--text-secondary);
+        line-height: 1.65;
+        max-width: 880px;
+    }
+
+    .thirds, .split {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+        gap: var(--gap-grid);
+        margin-top: clamp(24px, 4vw, 40px);
+        width: 100%;
+    }
+
+    .split-2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+        gap: var(--gap-grid);
+        margin-top: clamp(24px, 4vw, 40px);
+        width: 100%;
+    }
+
+    .card {
+        background: var(--surface-1);
+        border: 1px solid var(--border-subtle);
+        border-radius: clamp(12px, 2vw, 16px);
+        padding: clamp(18px, 4vw, 28px);
+    }
+    .card h3, .card h4 { color: var(--text-primary); margin: 0 0 10px 0; }
+    .card h3 { font-size: clamp(17px, 2.4vw, 21px); }
+    .card h4 { font-size: clamp(14px, 2vw, 16px); }
+    .card p, .card li { color: var(--text-secondary); font-size: var(--fs-body); line-height: 1.55; margin: 0; }
+    .card .tag {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: var(--accent-color);
+        margin-bottom: 8px;
+    }
+
+    .card.declined { border-color: rgba(255,107,107,0.35); }
+    .card.declined .tag { color: #FF6B6B; }
+
+    .icon-card { font-size: clamp(28px, 5vw, 44px); display: block; margin-bottom: 10px; }
+
+    .code-block {
+        background: var(--surface-1);
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+        padding: clamp(14px, 3vw, 22px) clamp(16px, 4vw, 28px);
+        font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+        font-size: clamp(12px, 1.9vw, 15px);
+        line-height: 1.65;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        overflow-x: auto;
+        color: var(--text-secondary);
+        margin-top: clamp(18px, 3vw, 28px);
+        width: 100%;
+        max-width: 900px;
+    }
+    .code-comment { color: rgba(255,255,255,0.4); }
+    .code-good { color: #30D158; }
+    .code-bad { color: #FF6B6B; }
+    .code-accent { color: var(--accent-color); }
+
+    .quote-block {
+        border-left: 3px solid var(--accent-color);
+        padding: 4px clamp(18px, 4vw, 30px);
+        margin-top: clamp(24px, 4vw, 36px);
+        max-width: 920px;
+    }
+    .quote-block p {
+        font-size: clamp(18px, 3.2vw, 28px);
+        color: var(--text-primary);
+        font-weight: 600;
+        line-height: 1.4;
+        margin: 0;
+        letter-spacing: -0.01em;
+    }
+    .quote-block .attribution {
+        display: block;
+        margin-top: 12px;
+        font-size: var(--fs-small);
+        color: var(--text-tertiary);
+        font-weight: 400;
+    }
+
+    .big-quote {
+        font-size: clamp(26px, 5vw, 46px);
+        font-weight: 700;
+        line-height: 1.3;
+        letter-spacing: -0.01em;
+        color: var(--text-primary);
+        max-width: 1000px;
+    }
+    .big-quote .dim { color: var(--text-tertiary); font-weight: 500; }
+
+    .data-table {
+        width: 100%;
+        max-width: 1000px;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin-top: clamp(20px, 3vw, 32px);
+    }
+    .data-table th {
+        color: var(--accent-color);
+        font-size: var(--fs-small);
+        font-weight: 600;
+        text-align: left;
+        padding: clamp(8px, 1.5vw, 12px);
+        border-bottom: 1px solid var(--border-visible);
+        white-space: nowrap;
+    }
+    .data-table td {
+        color: var(--text-secondary);
+        font-size: var(--fs-body);
+        padding: clamp(8px, 1.5vw, 12px);
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .data-table tr.wrong td { color: #FF6B6B; }
+    .data-table tr.wrong td:last-child { font-weight: 700; }
+    .data-table td.ok { color: #30D158; font-weight: 700; }
+    .table-scroll { width: 100%; overflow-x: auto; }
+
+    .flow {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+        gap: var(--gap-grid);
+        margin-top: clamp(24px, 4vw, 40px);
+        width: 100%;
+    }
+    .flow-step {
+        background: var(--surface-2);
+        border: 1px solid var(--border-visible);
+        border-radius: var(--radius-sm);
+        padding: var(--space-lg);
+        position: relative;
+    }
+    .flow-step .num {
+        font-size: var(--fs-small);
+        font-weight: 700;
+        color: var(--accent-color);
+        letter-spacing: 1px;
+    }
+    .flow-step h4 { color: var(--text-primary); margin: 8px 0; font-size: clamp(15px, 2.2vw, 18px); }
+    .flow-step p { color: var(--text-secondary); font-size: var(--fs-body); line-height: 1.5; margin: 0; }
+
+    .tier-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+        gap: 2px;
+        margin-top: clamp(20px, 3vw, 32px);
+        width: 100%;
+    }
+    .tier-cell {
+        background: var(--surface-2);
+        padding: var(--space-lg);
+        border-radius: var(--radius-sm);
+    }
+    .tier-cell h4 { color: var(--text-primary); margin: 0 0 8px 0; font-size: clamp(15px, 2.2vw, 18px); }
+    .tier-cell p { color: var(--text-secondary); margin: 0; font-size: var(--fs-body); line-height: 1.5; }
+
+    .velocity-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
+        gap: var(--gap-grid);
+        margin-top: clamp(30px, 5vw, 50px);
+        width: 100%;
+        max-width: 1100px;
+    }
+    .velocity-stat { text-align: center; }
+    .velocity-number {
+        font-size: clamp(32px, 6vw, 56px);
+        font-weight: 800;
+        color: var(--accent-color);
+        letter-spacing: -0.02em;
+        line-height: 1;
+    }
+    .velocity-label {
+        font-size: var(--fs-small);
+        color: var(--text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 8px;
+    }
+
+    .nav {
+        position: fixed;
+        bottom: 22px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 8px;
+        z-index: 100;
+    }
+    .nav-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.25);
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .nav-dot.active { background: var(--accent-color); }
+
+    .slide-counter {
+        position: fixed;
+        bottom: 24px;
+        right: clamp(16px, 4vw, 32px);
+        font-size: 12px;
+        color: var(--text-tertiary);
+        z-index: 100;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .kicker-num {
+        font-size: var(--font-big-number);
+        font-weight: 800;
+        color: var(--accent-color);
+        line-height: 1;
+        letter-spacing: -0.02em;
+    }
+
+    ul.plain { margin: 10px 0 0 0; padding-left: 20px; }
+    ul.plain li { margin-bottom: 6px; }
+
+    .divider-label {
+        font-size: var(--fs-small);
+        color: var(--text-tertiary);
+        margin-top: clamp(24px, 4vw, 36px);
+        max-width: 880px;
+        line-height: 1.6;
+    }
+</style>
+</head>
+<body>
+
+<!-- 1: TITLE -->
+<div class="slide active center">
+    <div class="section-label">Smart Tools Hackathon &middot; Closing Session</div>
+    <h1 class="headline">Expertise leaves the bundle</h1>
+    <p class="subhead">Domain expertise that lived inside an Amplifier bundle, repackaged as standalone smart
+        tools &mdash; now driven correctly by three harnesses we did not build.</p>
+    <div class="badge">Active</div>
+    <div class="small-text">September 16, 2026</div>
+</div>
+
+<!-- 2: BEAT 1 - the bundle -->
+<div class="slide">
+    <div class="section-label">Beat One &middot; Where It Started</div>
+    <h2 class="headline">Real. Working. Unreachable.</h2>
+    <div class="thirds">
+        <div class="card">
+            <div class="tag">Two Recipes</div>
+            <h3>deep-research.yaml &middot; fact-check.yaml</h3>
+            <p>119 lines and 158 lines of Amplifier recipe &mdash; sequential stages, no branching.</p>
+        </div>
+        <div class="card">
+            <div class="tag">One Agent</div>
+            <h3>agents/research-expert.md</h3>
+            <p>241 lines of judgment: how to search, how to weigh a source, how to cite it.</p>
+        </div>
+        <div class="card">
+            <div class="tag">One Address</div>
+            <h3><code>agent: "perplexity:research-expert"</code></h3>
+            <p>A bundle-relative address. It resolves inside an Amplifier session and nowhere else.</p>
+        </div>
+    </div>
+    <p class="divider-label"><code>bundle.md</code> inherits <code>microsoft/amplifier-foundation@main</code> &mdash;
+        the bundle cannot mount without the Amplifier runtime underneath it. No path in from a CI job, a shell
+        script, GitHub Copilot, or Claude Code.</p>
+    <div class="quote-block">
+        <p>&ldquo;The expertise is fine. Its packaging is the problem.&rdquo;</p>
+    </div>
+</div>
+
+<!-- 3: BEAT 2 - two protocols -->
+<div class="slide">
+    <div class="section-label">Beat Two &middot; The Architectural Move</div>
+    <h2 class="headline">Two protocols, not one</h2>
+    <div class="split-2">
+        <div class="card">
+            <div class="tag">Acquires Evidence</div>
+            <h3>A backend with web access</h3>
+            <p>A research service, or an agent with tools. It may bring new sources into a run &mdash; that is its
+                entire job.</p>
+        </div>
+        <div class="card">
+            <div class="tag">Reasons Over Evidence</div>
+            <h3>An agent with no tools</h3>
+            <p>It may only cite what the run already gathered. A synthesis citing a source the run never collected
+                is rejected and repaired.</p>
+        </div>
+    </div>
+    <p class="divider-label">We considered collapsing both into one <code>Agent</code> abstraction with a
+        <code>can_search</code> flag, and declined. They do not differ in shape &mdash; they differ in
+        <strong>authority</strong>: what each is permitted to introduce into the caller's world. Reversibility
+        runs in one direction only, and the type system makes the wrong direction unrepresentable.</p>
+</div>
+
+<!-- 4: pointer not copy -->
+<div class="slide">
+    <div class="section-label">Beat Two &middot; The Architectural Move</div>
+    <h2 class="medium-headline">Pointer, not copy</h2>
+    <p class="body-text">The installed skill used to carry the whole of <code>--help</code> with an install block
+        spliced in, guarded by a test asserting that derivation. The test checked the wrong thing: it proved the
+        file matched <code>--help</code> in this repository at build time &mdash; not what a caller's pinned
+        install actually has.</p>
+    <div class="code-block"><span class="code-comment"># release 0.6.0</span>
+installed SKILL.md    <span class="code-bad">155 lines</span>  &rarr;  <span class="code-good">69 lines</span>
+--help (agent-facing)  <span class="code-accent">142 lines</span>, untouched
+
+<span class="code-comment"># the 69-line file says four things:</span>
+<span class="code-comment">#   what the tool is</span>
+<span class="code-comment">#   how to install it</span>
+<span class="code-comment">#   that --help is the real skill</span>
+<span class="code-comment">#   how to tell whether your copy is current</span></div>
+    <p class="divider-label">A pointer cannot go stale, because it asserts nothing <code>--help</code> would.
+        <code>--help</code> is printed by the binary the caller actually has &mdash; correct by construction,
+        not by our diligence.</p>
+</div>
+
+<!-- 5: Attractor declined -->
+<div class="slide">
+    <div class="section-label">Beat Two &middot; The Architectural Move</div>
+    <h2 class="headline">Attractor &mdash; assessed, declined</h2>
+    <p class="body-text">Buildable-with. We read the orchestrator's engine source directly and declined it, for
+        three reasons.</p>
+    <div class="thirds">
+        <div class="card declined">
+            <div class="tag">Reason One</div>
+            <p><code>llm-direct</code> is bare model calls, not a tool-using agent. Research needs web access,
+                which means a spawned session &mdash; back inside the runtime we were trying to avoid.</p>
+        </div>
+        <div class="card declined">
+            <div class="tag">Reason Two</div>
+            <p>Fan-out width is fixed at parse time from edges in the <code>.dot</code> text. Fact-check has
+                N claims, N unknown until runtime.</p>
+        </div>
+        <div class="card declined">
+            <div class="tag">Reason Three</div>
+            <p>Neither pipeline branches. A four-node linear graph is a for-loop; the engine means owning two
+                failure domains instead of one.</p>
+        </div>
+    </div>
+    <p class="divider-label">Two things kept anyway: its checkpoint discipline (write after every node, carry a
+        graph fingerprint, refuse loudly to resume a bad one) and its event vocabulary
+        (<code>node_start</code>, <code>node_complete</code>, <code>checkpoint</code>, <code>error</code>).</p>
+    <div class="quote-block">
+        <p>&ldquo;Adopt an orchestrator when the control flow is the hard part; when the control flow is a
+            for-loop, the orchestrator is the hard part.&rdquo;</p>
+    </div>
+</div>
+
+<!-- 6: measurement arc -->
+<div class="slide">
+    <div class="section-label">Beat Three &middot; How The Experience Evolved</div>
+    <h2 class="headline">Believed. Measured. Measured properly.</h2>
+    <div class="flow">
+        <div class="flow-step">
+            <div class="num">01 &middot; BELIEVED</div>
+            <h4>N=1, confound stated</h4>
+            <p>A 2x gap on one run each. Unmeasured variance, said plainly rather than treated as a result.</p>
+        </div>
+        <div class="flow-step">
+            <div class="num">02 &middot; MEASURED PROPERLY</div>
+            <h4>3 per arm, interleaved</h4>
+            <p>Six live runs, on/off/on/off/on/off. Ranges don't overlap &mdash; 488&ndash;567s vs 281&ndash;335s.
+                Real, on sharp questions only.</p>
+        </div>
+        <div class="flow-step">
+            <div class="num">03 &middot; BUILT THE MISSING POPULATION</div>
+            <h4>Vague questions, blind pairwise</h4>
+            <p>Three questions, one judge, one run per arm, judged twice with positions inverted.
+                Skipping scope loses 6&ndash;6.</p>
+        </div>
+        <div class="flow-step">
+            <div class="num">04 &middot; AND THEN</div>
+            <h4>The prose outran the measurement</h4>
+            <p>Twice. Not a victory lap &mdash; the next two slides are where we were wrong.</p>
+        </div>
+    </div>
+</div>
+
+<!-- 7: prose outran measurement -->
+<div class="slide">
+    <div class="section-label">Beat Three &middot; How The Experience Evolved</div>
+    <h2 class="medium-headline">The prose outran the measurement &mdash; twice</h2>
+    <div class="split-2">
+        <div class="card declined">
+            <div class="tag">fix(hdm)</div>
+            <h4>A rule we never measured</h4>
+            <p>The skill said: pass the flag when a program composed the question, leave it off when a person did.
+                That turns a property of the <em>question</em> into a property of its <em>author</em>. A person can
+                ask a perfectly sharp question &mdash; the test task was exactly that. An agent obeyed the rule
+                faithfully and left the saving on the table.</p>
+        </div>
+        <div class="card declined">
+            <div class="tag">Direction, not magnitude</div>
+            <h4>&ldquo;Saves ~37%&rdquo; was the wrong number</h4>
+            <p>37% is what scope <strong>adds</strong>; skipping it <strong>saves</strong> ~27%. One measurement,
+                two numbers, and every place we'd written it quoted the flattering one. Wall-clock had the same
+                error: +69% with, &minus;41% without.</p>
+        </div>
+    </div>
+    <p class="divider-label">Both times an agent trying to <em>act</em> on the text found it &mdash; never a human
+        re-reading it. A ratio changes meaning with its denominator, and the sentence reads fine either way, which
+        is precisely why it survives review.</p>
+    <div class="quote-block">
+        <p>&ldquo;A better-presented document is obeyed more exactly. That is a multiplier, not an
+            improvement.&rdquo;</p>
+    </div>
+</div>
+
+<!-- 8: evidence tier system -->
+<div class="slide">
+    <div class="section-label">Beat Three &middot; How The Experience Evolved</div>
+    <h2 class="headline">Nine of eleven sections carried no measurement</h2>
+    <p class="body-text">&mdash; and read with the same authority as the two that did. The exact failure our own
+        tools exist to prevent, committed in the document arguing for preventing it. So every section now opens
+        with its tier.</p>
+    <div class="tier-grid">
+        <div class="tier-cell">
+            <h4>MEASURED</h4>
+            <p>A before/after or A/B we actually ran, with the figures and their sample size attached.</p>
+        </div>
+        <div class="tier-cell">
+            <h4>OBSERVED</h4>
+            <p>Something we read in source or watched happen. True, but not a measurement.</p>
+        </div>
+        <div class="tier-cell">
+            <h4>JUDGMENT</h4>
+            <p>An argued call. The reasoning is shown; the other arm was not built.</p>
+        </div>
+        <div class="tier-cell">
+            <h4>PROPOSAL</h4>
+            <p>A design we have not implemented or measured. An argument, nothing more.</p>
+        </div>
+    </div>
+    <p class="divider-label">Read a PROPOSAL as an invitation to disagree. Read MEASURED with its sample size
+        attached &mdash; almost all of ours are N=1 per arm.</p>
+</div>
+
+<!-- 9: four arms table -->
+<div class="slide">
+    <div class="section-label">Beat Four &middot; Expertise Escaping Amplifier</div>
+    <h2 class="headline">Four arms. One wrong answer &mdash; and it was ours.</h2>
+    <p class="body-text">The task: a sharp question, a tight budget, a nearly-full context. Correct call:
+        <code>--depth low --no-scope --no-inline</code>. Four agent runs, one per arm &mdash; self-reported by
+        each agent's own account of its steps; no raw transcripts.</p>
+    <div class="table-scroll">
+    <table class="data-table">
+        <tr><th>Host</th><th>Documentation</th><th>Steps</th><th>Final command</th><th>Verdict</th></tr>
+        <tr><td>Amplifier</td><td>old skill + <code>-h</code></td><td>5</td><td><code>--depth low --no-scope --no-inline --quiet</code></td><td class="ok">correct</td></tr>
+        <tr class="wrong"><td>Amplifier</td><td>new skill, bad rule</td><td>9</td><td><code>--depth low --no-inline</code></td><td>wrong</td></tr>
+        <tr><td>Amplifier</td><td>corrected skill</td><td>7</td><td><code>--depth low --no-scope --no-inline</code></td><td class="ok">correct</td></tr>
+        <tr><td>Claude Code</td><td>corrected skill</td><td>6</td><td><code>--depth low --no-scope --no-inline</code></td><td class="ok">correct</td></tr>
+    </table>
+    </div>
+    <p class="divider-label">The only wrong answer in four arms came from our own documentation, not from any
+        host: the arm reading the newer, more confident-sounding skill obeyed a rule we had gotten backwards. The
+        arm reading the older, scrappier docs noticed the two texts disagreed and judged the more precise one
+        authoritative &mdash; and got it right.</p>
+</div>
+
+<!-- 10: third harness codex -->
+<div class="slide">
+    <div class="section-label">Beat Four &middot; Expertise Escaping Amplifier</div>
+    <h2 class="medium-headline">A third harness, and what it can say that two cannot</h2>
+    <p class="body-text">Two hosts show a convention is not Amplifier-specific. Two cannot distinguish
+        &ldquo;works everywhere&rdquo; from &ldquo;works in the two places we happened to try.&rdquo; Codex CLI
+        0.154.0 was the third arm, same task, same constraints.</p>
+    <div class="table-scroll">
+    <table class="data-table">
+        <tr><th>Host</th><th>Steps</th><th>Final command</th></tr>
+        <tr><td>Amplifier (corrected)</td><td>7</td><td><code>--depth low --no-scope --no-inline</code></td></tr>
+        <tr><td>Claude Code</td><td>6</td><td><code>--depth low --no-scope --no-inline</code></td></tr>
+        <tr><td>Codex CLI 0.154.0</td><td>5</td><td><code>--depth low --no-scope --max-sources 3 --no-inline</code></td></tr>
+    </table>
+    </div>
+    <p class="divider-label">Codex added <code>--max-sources 3</code> and labelled it: &ldquo;Three is a judgment
+        call, not a documented optimum or guaranteed saving.&rdquo; It quoted our own &ldquo;NOT MODELLED&rdquo;
+        text back at us rather than guessing silently. Worth stating plainly: <strong>two hosts discovered the
+        skill, three drove the tool</strong> &mdash; Claude Code found it unaided; Codex was pointed at
+        <code>.agents/skills/</code> in the prompt, so we cannot claim it would have found the skill on its own.</p>
+</div>
+
+<!-- 11: two hosts two workarounds -->
+<div class="slide">
+    <div class="section-label">Beat Four &middot; Expertise Escaping Amplifier</div>
+    <h2 class="medium-headline">Two hosts, two different inventions, one real gap</h2>
+    <p class="body-text">Neither host was told how to wait when its own call limit is shorter than the interval
+        it was handed. Both had to invent something. Neither invented the same thing.</p>
+    <div class="split-2">
+        <div class="card">
+            <div class="tag">Claude Code &middot; 13 commands</div>
+            <h3>9 bounded poll loops</h3>
+            <p>Each loop: 9 iterations of 10 seconds, breaking early on a final state &mdash; sized to stay under
+                its own 120-second command ceiling.</p>
+        </div>
+        <div class="card">
+            <div class="tag">Codex &middot; 45 commands</div>
+            <h3>31 individual status polls</h3>
+            <p>Reached for <code>--detach</code> unprompted and completed a 658.8-second run against the same
+                120-second ceiling &mdash; no command killed, no timeout raised.</p>
+        </div>
+    </div>
+    <p class="divider-label">The gap is real &mdash; 2 of 2 hosts improvised &mdash; and the workaround is
+        host-specific. The spec should state the obligation (wait without blocking past your own limit) and must
+        not prescribe the mechanism, because two capable hosts picked different ones and both were correct.</p>
+</div>
+
+<!-- 12: payoff -->
+<div class="slide">
+    <div class="section-label">Beat Four &middot; Expertise Escaping Amplifier</div>
+    <h2 class="medium-headline">The discipline that traveled</h2>
+    <p class="body-text">A real run, real money, driven entirely from the installed skill in Claude Code:
+        <code>$0.05799</code>, 15 sources, correct flags chosen by the agent. Unprompted, it reported which claims
+        were thinly sourced:</p>
+    <div class="code-block">&ldquo;Only two sources were explicitly pinned to the claims&hellip;
+the join-semilattice framing had no source pinned to it
+in the gathered evidence.&rdquo;</div>
+    <div class="quote-block">
+        <p>&ldquo;The citation-integrity discipline survived into a foreign harness and reached the end user,
+            rather than being smoothed into a confident summary by the host in between.&rdquo;</p>
+    </div>
+</div>
+
+<!-- 13: velocity -->
+<div class="slide center">
+    <div class="section-label">The Numbers</div>
+    <h2 class="medium-headline">Three days, one workspace, no remote reviewers</h2>
+    <div class="velocity-grid">
+        <div class="velocity-stat">
+            <div class="velocity-number">3</div>
+            <div class="velocity-label">Days &middot; Sep 14&ndash;16</div>
+        </div>
+        <div class="velocity-stat">
+            <div class="velocity-number">54</div>
+            <div class="velocity-label">Commits &middot; 31/7/16</div>
+        </div>
+        <div class="velocity-stat">
+            <div class="velocity-number">273</div>
+            <div class="velocity-label">Tests, live collected</div>
+        </div>
+        <div class="velocity-stat">
+            <div class="velocity-number">16/16</div>
+            <div class="velocity-label">Conformance, both roots</div>
+        </div>
+        <div class="velocity-stat">
+            <div class="velocity-number">3</div>
+            <div class="velocity-label">Harnesses &middot; Amplifier, Claude Code, Codex</div>
+        </div>
+        <div class="velocity-stat">
+            <div class="velocity-number">$7.59</div>
+            <div class="velocity-label">Live model spend &middot; 20 surviving run artifacts</div>
+        </div>
+    </div>
+    <p class="divider-label">Catalog listing merged after approval by DavidKoleczek (Microsoft member) &mdash;
+        the author pressed merge. Primary author: colombod, effectively the sole committer across both
+        repositories in this arc.</p>
+</div>
+
+<!-- 14: close quote -->
+<div class="slide center">
+    <div class="section-label">Closing</div>
+    <p class="big-quote">Reviewing your own work tests whether it is consistent with what you meant.
+        <span class="dim">Only exercising it tests whether it is true.</span></p>
+</div>
+
+<!-- 15: sources -->
+<div class="slide">
+    <div class="section-label">Sources</div>
+    <h2 class="medium-headline">Research Methodology</h2>
+    <div class="body-text" style="line-height:1.7;">
+        <p><strong>Data as of:</strong> September 16, 2026</p>
+        <p><strong>Feature status:</strong> Active &mdash; <code>deep-research</code> and <code>fact-check</code>
+            at release 0.6.0, listed in the Microsoft Amplifier Smart Tools catalog.</p>
+        <p><strong>Research performed:</strong></p>
+        <ul class="plain">
+            <li>Delegated research pass via <code>stories:story-researcher</code>, evidence tiers and figures
+                cross-checked against source below.</li>
+            <li>Git log analysis on both <code>amplifier-bundle-perplexity</code> and
+                <code>amplifier-smart-tools-research</code> (commit range 7f2e839 &rarr; 954a871, 54 commits,
+                Sep 14&ndash;16, 2026).</li>
+            <li>Line counts read directly from source: <code>recipes/deep-research.yaml</code> (119 lines),
+                <code>recipes/fact-check.yaml</code> (158 lines), <code>agents/research-expert.md</code>
+                (241 lines).</li>
+            <li>Commit bodies read verbatim for <code>fix(hdm)</code> and <code>release: 0.6.0</code> to confirm
+                the scope-rule defect and the SKILL.md pointer change (155&rarr;69 lines against a 142-line
+                <code>--help</code>).</li>
+            <li>Live <code>pytest --collect-only</code> run against <code>amplifier-smart-tools-research</code>:
+                273 tests collected.</li>
+            <li>Findings document read in full: <code>smart-tools-hackathon-shared-space/findings/
+                colombod-building-two-smart-tools.md</code> (1,820 lines) &mdash; source for the measurement arc,
+                the four-arm table, the Codex comparisons, and the evidence-tier rationale.</li>
+            <li>Catalog repository commit history reviewed for the manifest-merge provenance.</li>
+        </ul>
+        <p><strong>Gaps honored, not filled:</strong> the four-arm comparison is self-reported by each agent's
+            own account of its steps &mdash; no raw transcripts exist. The $7.59 spend figure is aggregated
+            across 20 surviving run artifacts, not a full accounting of every run attempted. The Attractor
+            decline is a JUDGMENT call, not an A/B &mdash; the alternative was never built.</p>
+        <p><strong>Primary contributor:</strong> colombod &mdash; effectively sole author across both
+            repositories in this arc; catalog listing approved and merged by DavidKoleczek (Microsoft member).</p>
+    </div>
+</div>
+
+<!-- 16: CTA -->
+<div class="slide center">
+    <div class="section-label">Where To Look</div>
+    <h2 class="headline">Try it in the harness you already use</h2>
+    <div class="code-block">npx skills add colombod/amplifier-smart-tools-research --agent claude-code -y
+uv tool install 'git+https://github.com/colombod/amplifier-smart-tools-research#subdirectory=tools/deep-research'
+deep-research --help</div>
+    <p class="subhead">Findings, defects, and the full evidence trail live in
+        <code>smart-tools-hackathon-shared-space/</code> for anyone continuing this work.</p>
+</div>
+
+<!-- Navigation -->
+<div class="nav" id="nav"></div>
+<div class="slide-counter" id="counter"></div>
+
+<script>
+    const slides = document.querySelectorAll('.slide');
+    let currentSlide = 0;
+
+    function showSlide(n) {
+        slides[currentSlide].classList.remove('active');
+        currentSlide = (n + slides.length) % slides.length;
+        slides[currentSlide].classList.add('active');
+        updateNav();
+    }
+
+    function updateNav() {
+        const nav = document.getElementById('nav');
+        const counter = document.getElementById('counter');
+        nav.innerHTML = '';
+        slides.forEach((_, i) => {
+            const dot = document.createElement('div');
+            dot.className = 'nav-dot' + (i === currentSlide ? ' active' : '');
+            dot.onclick = () => showSlide(i);
+            nav.appendChild(dot);
+        });
+        counter.textContent = `${currentSlide + 1} / ${slides.length}`;
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ') showSlide(currentSlide + 1);
+        if (e.key === 'ArrowLeft') showSlide(currentSlide - 1);
+    });
+
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('.nav')) return;
+        if (e.target.closest('a')) return;
+        if (e.clientX > window.innerWidth / 2) showSlide(currentSlide + 1);
+        else showSlide(currentSlide - 1);
+    });
+
+    let touchStartX = 0;
+    let touchEndX = 0;
+    const SWIPE_THRESHOLD = 50;
+
+    document.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    document.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        const diff = touchStartX - touchEndX;
+        if (Math.abs(diff) > SWIPE_THRESHOLD) {
+            if (diff > 0) showSlide(currentSlide + 1);
+            else showSlide(currentSlide - 1);
+        }
+    }, { passive: true });
+
+    updateNav();
+</script>
+</body>
+</html>

@@ -65,6 +65,7 @@ it**, so spend the time there.
 AGENTS.md    conventions, in the form an AI agent picks up automatically
 findings/    one file per person per body of work
 proposals/   concrete changes to the spec or the conformance kit
+presentations/  decks built from the evidence in this repo
 evidence/    artifacts a finding rests on — transcripts, outputs, run directories
 ```
 
