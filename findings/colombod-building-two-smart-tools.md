@@ -1654,6 +1654,133 @@ said it was.
 
 ---
 
+## The run record kept lying about how the run was performed
+
+**Evidence: MEASURED.** Two defects of identical shape, found a day apart, both in the
+artifact a caller audits when something goes wrong.
+
+A detached run's `run.json` recorded `detached: None`. A `--no-scope` run's `run.json` listed
+`scope` among its stages. In both cases a *correct* value was written first and then silently
+destroyed by a later writer that did not know about it.
+
+```
+--no-scope:  scope.json said  "scoped": false        run.json listed scope as a stage
+--detach:    parent wrote     "detached": true       child's writer overwrote the record
+```
+
+**We drew the wrong conclusion from our own record while investigating a real run**, and only
+opening the second file corrected us. Two records of one fact, and the one a reader reaches
+first was the wrong one.
+
+### The fix that matters is the general one
+
+Special-casing `detached` was one line. It would also have been **the third time this bit us**.
+So the writer now carries forward *any* pre-claimed key it does not itself define, and the test
+asserts both halves — the known field survives, **and an unrecognised one does too**. A test
+that only checked `detached` would have passed the special-case fix and taught the next author
+nothing.
+
+**For a smart tool specifically:** the run record is the only durable account of work a caller
+paid for. A tool that reports *what* it produced but misrepresents *how* it produced it has
+broken the audit trail its own detached contract depends on — "how many of our runs detached,
+and did they behave differently?" was unanswerable from a directory full of records that all
+said `None`.
+
+---
+
+## Our cost estimates were never once high
+
+**Evidence: MEASURED**, four runs, every single one over.
+
+```
+depth  estimate   observed            ratio
+low    $0.0405    $0.0580 - $0.1275   1.4x - 3.1x
+high   $0.1605    $0.8385 - $1.0087   5.2x - 6.3x
+```
+
+The profiles were guesses dressed as arithmetic — 8 sources assumed at low against 15 observed,
+34 at high against 69 and 98. **This matters beyond our own tool because we are proposing to
+the spec that tools declare cost before a caller commits.** We still believe that. But our own
+implementation of the idea was systematically optimistic in one direction, and a caller that
+budgets on $0.16 and is billed $1.01 has been misled by the verb whose entire job is preventing
+that.
+
+Recalibrated to observed means, and `estimate` now publishes a **band**. Two things forced the
+band rather than a better point:
+
+- Two runs at the *same* depth spanned **2.2x between themselves**.
+- A stage that fails validation is retried **and billed for every attempt**. One run spent
+  **63% of its money on discarded work**. No profile can predict that.
+
+### A band must contain its own evidence
+
+Our first band width put the low-depth floor at `$0.0651` — and **excluded one of the four runs
+it was calibrated on**, which had cost `$0.0580`. Outside by a margin nobody would catch by
+reading.
+
+The test now parametrises the four runs **by run id**, so a future recalibration has to face
+the same arithmetic rather than re-deriving a comfortable number. **A range that does not
+contain its own evidence is worse than no range, because it looks like a measurement.**
+
+---
+
+## A version number is a claim, and ours was false
+
+We shipped **fifteen commits under version `0.4.0`** — including a fix to cost reporting that
+had been wrong on *every run this tool had ever performed*. Anyone who installed `0.4.0` in the
+morning held materially different software from anyone installing `0.4.0` that evening.
+
+And the catalog **refreshes nightly from `main`**, so it would have republished changed content
+under an unchanged version number, silently, every night. We had spent the previous day proving
+that a stale published snapshot is the exact failure the catalog's refresh action exists to
+prevent — then shipped one ourselves through the version field instead of the file contents.
+
+### The version test could not have caught it
+
+There *is* a test asserting the manifest version matches the package version. It compares **five
+declarations against each other**, never against what changed. All five were **consistently
+wrong** rather than inconsistent.
+
+**A consistency check and a correctness check look identical on a dashboard.** This is the same
+shape as a flag test we had earlier that named a class and checked one instance: a green check
+occupying the slot where the real question would go.
+
+(It did earn its keep during the bump — it failed the moment source said `0.5.0` while the
+editable install still declared `0.4.0`, which is precisely the stale-install case it is for.)
+
+**Suggestion for the generator:** scaffold a `CHANGELOG.md` and make the release step part of
+the paved path. A first-time author will not invent one, and a tool published to a
+refresh-on-merge catalog needs a version that means something more than one that is merely
+internally consistent.
+
+---
+
+## What the whole defect chain taught us
+
+Seven defects in two days, and **not one was findable by reading**:
+
+```
+cost under-reported on EVERY run ever     found by summing attempts.json and comparing
+synthesis failing 2-in-3 at depth=high    found by keeping rejected replies and reading one
+$0.66 of retries invisible to the caller  found by auditing a run we had already paid for
+--no-scope saving overstated 37% vs 27%   found by an agent acting on the text
+a flag an agent could not discover        found by giving an agent a budget constraint
+the record misreporting how it ran        found by auditing our own run record
+the version meaning fifteen things        found by asking "is this shipped?"
+```
+
+Each was found by **running something** — an agent through the docs, a foreign harness against
+the tool, arithmetic against a record. Reviewing your own work tests whether it is consistent
+with what you meant. **Only exercising it tests whether it is true.**
+
+The single highest-leverage change was not a feature. It was **keeping the rejected replies on
+disk**. Two days of "no JSON document was found in the reply" was unsolvable while the evidence
+was being deleted at the moment it became interesting, and took one command once it was not.
+**When a failure resists diagnosis, check whether you can observe it before theorising about
+it** — an unreadable symptom is usually an instrumentation gap wearing a hard problem's costume.
+
+---
+
 ## What we intend to feed back
 
 **Evidence: SUMMARY** — a routing list, not a claim. Each item's evidence is whatever its own section carries.
