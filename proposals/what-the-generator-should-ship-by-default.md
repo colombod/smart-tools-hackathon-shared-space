@@ -74,6 +74,27 @@ Three things worth generating, and the second two are what make it stick:
 **An overview that does not mention the deeper documents hides them** — the root skill should
 tell an agent to ask a verb directly.
 
+### 1c. Scaffold the `## Install` section — you already do, and it saved us
+
+Your scaffold emits `## Install` in every generated `SKILL.md`. **Ours did not, because we
+hand-built it before adopting your split, and we only noticed by reading your templates.** Keep
+it, and consider making the reason explicit in the template comment: `npx skills add` installs a
+**document**, not the program, so a host can hold the skill without the binary. A tool's own
+manifest carries `requires[].install`, but reading it means running the tool — the thing that
+host cannot do.
+
+One refinement we had to work out and a generator could ship: **`--help` and the installed
+`SKILL.md` should not be byte-identical once install text exists.** A `--help` reader already
+has the binary; telling them how to obtain it is incoherent. We kept the anti-drift guarantee by
+noticing the invariant was never "these two strings are equal" but **"one source, and the second
+artifact is mechanically derived from it"** — so the file is `--help` with the install block
+spliced in, and the test asserts that derivation exactly.
+
+**Splice AFTER the frontmatter, not before.** Our first version prepended and pushed the YAML
+frontmatter from line 1 to line 14, silently breaking skill discovery — and no test failed,
+because every check guarded the file's *content* while we had changed its *shape*. A generated
+test asserting the file opens with `---` costs nothing and closes that.
+
 ### 2. A generated test that the capability actually RAN
 
 **Our most repeated defect, four separate times**: something was *declared* present and was

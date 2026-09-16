@@ -1272,6 +1272,164 @@ the second and third occurrences got through.
 
 ---
 
+## Two harnesses: what a second host told us that the first could not
+
+**Evidence: MEASURED** — four agent runs plus one real paid run, each with its commands and
+numbers recorded. Claude Code 2.1.263 and Amplifier, same tool, same task.
+
+Every agent measurement in this project had used **one host**: Amplifier, our own harness, our
+own conventions, our own idea of what a skill is. That cannot distinguish *"we built something
+portable"* from *"we built something Amplifier-shaped."* So we ran it in a host we did not
+design for.
+
+### The four arms, and the wrong answer came from us
+
+The task: a sharp question, a tight budget, a nearly-full context. The correct call is
+`--depth low --no-scope --no-inline`.
+
+| host | documentation | steps | final command | |
+|---|---|---|---|---|
+| Amplifier | old skill + `-h` | 5 | `--depth low --no-scope --no-inline --quiet` | correct |
+| Amplifier | new skill, **bad rule** | 9 | `--depth low --no-inline` | **wrong** |
+| Amplifier | corrected skill | 7 | `--depth low --no-scope --no-inline` | correct |
+| Claude Code | corrected skill | 6 | `--depth low --no-scope --no-inline` | correct |
+
+**The only wrong answer in four arms came from our own documentation, not from any host.**
+
+We had measured that the scope stage does not pay on questions that are already sharp. We then
+wrote the skill as *"pass it when a program composed the question, leave it off when a person
+phrased it"* — turning a property of the **question** into a property of its **author**. A
+person can ask a perfectly sharp question, which is exactly what the task was.
+
+The arm reading that text refused the saving and said why:
+
+> *"This question was phrased by a person, not composed programmatically, so the doc's own rule
+> says leave it off — regardless of how well-bounded the question looks. I did not try to
+> override that judgment call with my own assessment of clarity, since the doc gives an explicit
+> provenance-based rule, not a clarity-based one."*
+
+It left ~27% of the cost on the table by following our instruction **faithfully**. The arm with
+the older, scrappier docs noticed the two texts disagreed, judged the more precise one
+authoritative, and got it right.
+
+**A better-presented document is obeyed more exactly. That is a multiplier, not an improvement**
+— it amplifies a wrong rule as faithfully as a right one. The lesson we would pass on: gate
+presentation work on the text being *verified*, not the reverse.
+
+### A number is easy to carry in the wrong direction
+
+Fixing that exposed a second one of the same kind. Our prose said `--no-scope` *"saves ~37%"*.
+It does not. **37% is what scope ADDS; skipping it SAVES ~27%.** One measurement, two numbers,
+and every place we had written it quoted the flattering one. Wall-clock had the identical error:
++69% with, −41% without.
+
+Twice in two days our prose outran the measurement, and **both times an agent trying to ACT on
+the text found it — never a human re-reading it.** A ratio changes meaning with its denominator,
+and the sentence reads fine either way, which is precisely why it survives review.
+
+### `--help` and the installed skill are no longer the same document, on purpose
+
+We had a hard invariant: `--help` byte-identical to `SKILL.md`, so drift was impossible. Then we
+noticed — by reading David's generator, not our own tool — that **every skill his scaffold emits
+carries an `## Install` section and ours carried none.**
+
+That matters more than it looks. **`npx skills add` installs a DOCUMENT, not the program.** A
+host that gains the skill without the binary holds a description of a command it cannot run, and
+nothing in the document tells it how to fix that. Our manifest carries `requires[].install` —
+reachable only by running the tool, which is the thing it cannot do.
+
+But adding it to both made `--help` incoherent: **its reader already has the binary.** Two
+readers, two needs.
+
+The resolution was to notice what the invariant actually was. It was never *"these two strings
+are equal"* — it was ***"one source, and the second artifact is mechanically derived from it"***,
+with equality being the cheapest derivation that happened to work until now.
+
+```
+--help      136 lines   pure usage, zero acquisition instructions
+SKILL.md    149 lines   the same document, install block spliced in
+test        SKILL.md == compose_skill_file(--help)
+```
+
+Still impossible to drift. Each reader gets the document that is true for them.
+
+**And the first version of that was broken in a way no test caught.** We *prepended* the install
+block, which pushed the YAML frontmatter from line 1 to line 14 — and frontmatter is how a host
+learns a skill's name and description, which is to say how it discovers the skill at all. We had
+silently broken the one thing the file exists to do. Caught by looking at the output. **When you
+change a file's shape rather than its content, every check guarding its content still passes.**
+
+### Installing and running it from Claude Code
+
+```
+npx skills add colombod/amplifier-smart-tools-research --agent claude-code -y
+  ✓ Found 2 skills
+  ✓ deep-research → ./.claude/skills/deep-research
+  ✓ fact-check    → ./.claude/skills/fact-check
+  byte-identical to what we generate · frontmatter line 1 · install block line 11
+```
+
+The install command our skill documents works from cold:
+
+```bash
+uv tool install 'git+https://github.com/colombod/amplifier-smart-tools-research#subdirectory=tools/deep-research'
+→ Installed 1 executable: deep-research
+```
+
+Then a **real run, real money**, driven entirely from the installed skill:
+
+```
+run dr-aa7a2ff0   $0.05799 actual   12,597/3,893 tokens   15 sources   confidence medium
+flags chosen by the agent: --depth low --no-scope --no-inline
+```
+
+It returned a correct, substantive answer. **And unprompted, it reported which claims were thinly
+sourced** — *"only two sources were explicitly pinned to the claims… The join-semilattice framing
+had no source pinned to it in the gathered evidence."*
+
+That is the result we would point at above all the others. **The citation-integrity discipline
+survived into a foreign harness and reached the end user**, rather than being smoothed into a
+confident summary by the host in between.
+
+It also kept the report out of its own context and closed by naming the run directory and
+`read <id> --lines N` "at no further cost" — the navigation ladder used correctly by a host that
+had never seen it before.
+
+### Every gesture transferred
+
+`-h` versus `--help`, per-verb documents, the ladder, affordances, `liveness.state`, the install
+block. **Nothing we invented failed to survive the host change.** For a set of conventions
+designed against a single harness, that is a better result than we expected, and it is the part
+we would most like someone to try to break.
+
+### What the real run cost us in credibility, and what we changed
+
+**The estimate was 2× low.** `estimate --depth low --no-scope` said $0.0296; the run billed
+$0.05799 — the `depth=low` profile assumes 8 sources and the run gathered 15. Claude Code noticed
+and explained it without being asked.
+
+We tell callers to estimate before deciding. A caller that budgets on $0.03 and is billed $0.06
+has been misled by the verb whose entire job is preventing that. Open, filed, not yet fixed.
+
+Two changes we did make, both prompted by agents hitting a wall:
+
+- **`estimate` can now price the decision.** It rejected `--no-scope` outright, so a caller doing
+  exactly what we told it to do got a number that could not reflect the choice it was about to
+  make. It now applies the measured ratio and names its source in the `basis` field.
+- **`--max-sources` is explicitly NOT modelled**, and `estimate --help` says so and why. We have
+  no measured cost-per-source, and an estimator that silently accepted the flag while ignoring it
+  would be worse than one that rejects it. Claude Code read that and declined to guess — which is
+  exactly what the sentence was written to cause.
+
+### The honest gap
+
+Three probes, three real defects, and **none was findable by reading**. Reviewing your own docs
+tests whether they are consistent with what you meant. Running an agent through them tests
+whether they are sufficient for someone who was not there. **Only the second is the actual
+requirement**, and it is cheap: each of these runs cost cents and minutes.
+
+---
+
 ## What we intend to feed back
 
 **Evidence: SUMMARY** — a routing list, not a claim. Each item's evidence is whatever its own section carries.
