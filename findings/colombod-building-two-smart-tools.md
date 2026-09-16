@@ -1594,6 +1594,66 @@ We would still not call that "portable" without someone hostile trying it. But i
 
 ---
 
+## Two hosts, two different inventions, one real gap
+
+**Evidence: MEASURED.** Codex CLI driving a real detached run, `dr-28bac1ff`, against the same
+120-second command limit Claude Code faced.
+
+Claude Code had invented something we never documented: bash loops capped at 9 iterations of 10
+seconds, each finishing under the host's limit, breaking early on a final state. One host
+solving a problem alone is ambiguous — it could be a gap in our documentation, or that host's
+quirk. So we ran the same constraint past a second host.
+
+**Codex reached for `--detach` unprompted** and completed the run:
+
+```
+--detach --depth high --no-scope --no-inline
+658.8 seconds   $0.838542   no command killed, no timeout raised
+```
+
+And it solved the waiting problem **differently**:
+
+```
+Claude Code    13 commands    9 bounded poll LOOPS (9 x 10s, break on final)
+Codex          45 commands   31 individual status POLLS
+```
+
+Neither host was told how to wait when its own call limit is shorter than the
+`poll_again_in_seconds` interval it was handed. **Both had to invent something. Neither
+invented the same thing.**
+
+That is the answer: **the gap is real — 2 of 2 hosts improvised — and the workaround is
+host-specific.** So the spec should state the obligation (a caller must be able to wait without
+blocking past its own limit) and must NOT prescribe the mechanism, because two capable hosts
+picked different ones and both were correct.
+
+### The thing we did not expect
+
+Codex made **9 web-tool calls of its own** to verify and supplement our tool's output, then
+presented an answer that interleaved our report with its independently checked sources.
+
+It did not simply trust the smart tool. It treated the result as **evidence to corroborate**
+rather than an answer to relay — and said so, marking which links it had verified itself.
+
+We are not sure yet whether that is a compliment or a problem. It is certainly a finding: a
+smart tool's output does not arrive in a host as settled fact, and a host with its own research
+capability may spend real tokens double-checking work it just paid for. If that generalises, the
+cost model for smart tools is wrong in a way none of our measurements capture — we priced the
+tool's run and not the host's scepticism.
+
+### An accidental confirmation
+
+The binary Codex drove was installed before today's parser fix. It hit the exact bug we had
+diagnosed hours earlier — `synthesise attempt 1: no JSON document was found in the reply` — in
+a completely independent harness, on a different question.
+
+We had fixed it from two captured replies and three reproduction runs. This was a fourth
+occurrence nobody staged, and it landed in the window between the fix being committed and the
+binary being reinstalled. Confirmation that the failure was real, frequent, and exactly where we
+said it was.
+
+---
+
 ## What we intend to feed back
 
 **Evidence: SUMMARY** — a routing list, not a claim. Each item's evidence is whatever its own section carries.
