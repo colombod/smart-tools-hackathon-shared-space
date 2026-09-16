@@ -1531,6 +1531,69 @@ not design for, and the caveat reached a human.
 
 ---
 
+## A third harness: Codex CLI, and what three hosts can say that two cannot
+
+**Evidence: MEASURED.** One `codex exec` run, Codex CLI 0.154.0, same task and same
+constraints as the other two hosts.
+
+Two hosts show a convention is not Amplifier-specific. **Two cannot distinguish "works
+everywhere" from "works in the two places we happened to try."** Codex was the cheapest
+available third, and it consumes instructions differently from both — which is exactly what
+made it worth running.
+
+```
+host                    steps   final command
+Amplifier (corrected)     7     --depth low --no-scope --no-inline
+Claude Code               6     --depth low --no-scope --no-inline
+Codex CLI 0.154.0         5     --depth low --no-scope --max-sources 3 --no-inline
+```
+
+Codex read the skill, `research --help`, `estimate --help`, priced the run with
+`estimate --no-scope`, and ran `check`. Five commands, no wasted paid call.
+
+It quoted the **corrected** `--no-scope` rule back at us — *"already names its subject, its
+scope and what would answer it"* — and the **corrected** figure, *"~27% of the cost"*. Both of
+those sentences are less than a day old, written after an agent followed the earlier wrong
+version into the wrong call.
+
+### The one difference, and it argues for a sentence we wrote reluctantly
+
+Codex added `--max-sources 3`, which neither other host did. And it **labelled it**:
+
+> *"Three is a judgment call, not a documented optimum or guaranteed saving."*
+
+It had read our "NOT MODELLED" text and quoted it: *"We have no measured cost-per-source."* So
+it invented a parameter, knew it was inventing, and told the user which parts were doc-backed
+and which were its own.
+
+We added that sentence grudgingly — it felt like admitting a hole. **It turned out to be the
+most load-bearing sentence in the flag's documentation.** Silence would have read as "no
+constraint here"; an explicit gap read as "proceed, but say so". Documenting what you do not
+know steers a capable reader better than saying nothing.
+
+### What did not transfer cleanly
+
+`npx skills add --agent codex` worked and put both skills in `.agents/skills/` — the same
+directory Claude Code received. But **we told Codex where to look.** Claude Code surfaced the
+skill by itself; Codex got a pointer in the prompt, so we cannot claim it would have found the
+skill unaided. Codex also needed `--skip-git-repo-check` and `--sandbox danger-full-access`.
+
+That is a host-integration finding, not a defect in the tool — but it is the kind of thing a
+single-host test can never surface, and it is the reason the third arm was worth the ten
+minutes.
+
+### What three hosts now support
+
+Every convention we invented — the `-h` / `--help` split, per-verb documents, the ladder,
+affordances, `liveness.state`, the install block, and now the honest not-modelled note —
+survived three harnesses with three different instruction mechanisms. **The only variation
+across all three was a flag one host added while explicitly marking it unevidenced.**
+
+We would still not call that "portable" without someone hostile trying it. But it is no longer
+"works where we built it."
+
+---
+
 ## What we intend to feed back
 
 **Evidence: SUMMARY** — a routing list, not a claim. Each item's evidence is whatever its own section carries.
