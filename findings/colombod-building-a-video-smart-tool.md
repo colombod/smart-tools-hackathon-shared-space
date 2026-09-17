@@ -191,3 +191,95 @@ private and cannot ship, so CI runs on the easy case forever.
 **This is not a video problem.** Any smart tool whose input is messy real-world content has
 it: the fixture you can commit is the one that flatters you. We have no good answer, and we
 are recording the gap rather than pretending the synthetic result covers it.
+
+---
+
+# Second round: what a machine without credentials found
+
+Everything above was learned on the machine that built the tool. This section is what
+changed when it was installed from its git URL onto a container that had never seen the
+checkout — no `gh` binary, no `~/.config/gh`, no netrc, no provider variables, **nine
+environment variables in total.**
+
+## The "works without a provider" promise is only testable where no credential store exists
+
+**Evidence: MEASURED** — full deterministic chain on a credential-free container. **N=1
+container, one arm.** Upgrades the OBSERVED finding above, which could only report that our
+local test was insufficient.
+
+Earlier in this file we recorded that our own no-provider test passed for the wrong reason:
+the scrubbed environment passes `HOME` through, and an SDK reading credentials from a store
+under `HOME` finds them.
+
+On a container with nothing, the chain ran clean — `stitch --transition dissolve | render |
+verify` gave 5.24s, audio at -21.3 dB, and a measured blend. The promise holds. **But we
+could not have known that here**, and neither can anyone else running the same kind of local
+check.
+
+**For the conformance kit:** `loads-without-provider` passes today by scrubbing environment
+variables. A tool that reads credentials from a file under `HOME` passes that check while
+still depending on a provider. The check cannot detect this from inside the same machine.
+Either it needs to run somewhere without a credential store, or it needs to say what it
+does *not* cover.
+
+## A refusal message can point somewhere that does not contain the answer
+
+**Evidence: MEASURED** — a real defect in our shipped tool, found on first contact with a
+credential-free machine, fixed and re-verified in the same container.
+
+Asked to pick a transition from a description with no provider configured, our tool
+correctly refused and told the caller to run our `check` command to learn how to configure
+one. **That command never mentioned a provider.** It inspected two things and returned.
+
+The instruction was a dead end, and it had been shipped that way.
+
+It is not findable on a developer machine, and the reason generalises: **every machine that
+builds a tool has the credentials that make its refusal paths unreachable.** A refusal only
+fires where the thing is missing, so its guidance is only testable there too.
+
+**For the spec:** deterministic-path conformance is checked. Nothing checks that a tool's
+*own remediation instructions* lead anywhere. A smart tool is supposed to be consumable by
+an agent that cannot ask a human what to do next — which makes a dead pointer more expensive
+here than in ordinary software, because there is nobody to work around it.
+
+## Over-stating a credential requirement is worse than under-stating a feature
+
+**Evidence: OBSERVED** — our manifest marked a capability model-backed; on the
+credential-free container it served a real query and labelled its own answer `[literal]`.
+
+We listed `find` as model-backed. On the container it answered with zero credentials,
+through a literal-search tier, and said so in its own output.
+
+That is a false claim in the direction that matters most. A consumer reading "model-backed"
+concludes they need a provider to search a video. They do not — for the common case, because
+people searching a recording remember **words**, not paraphrases.
+
+**For the spec:** `model_backed` is a boolean, and real capabilities are **tiered**. Ours
+has a deterministic path that handles most queries and escalates only when the caller's
+words are not the speaker's. There is no way to say that, so you must choose between two
+wrong answers. We picked the wrong one, and a stranger's machine is what told us.
+
+## Install success and install identity are different claims
+
+**Evidence: MEASURED** — resolved commit compared across three independent sources. **N=1.**
+
+`uv tool install git+<url>` exiting zero says the install worked. It does not say it
+installed *what you pushed* — a cached wheel or a fast path could resolve elsewhere.
+
+The check that does say it: the SHA `uv` reports building, the `direct_url.json` in the
+installed dist-info, and `git ls-remote HEAD` captured **before** launch. All three matched.
+
+**For the kit:** worth considering as a conformance check in its own right — a tool
+installed from a ref should be able to prove *which* ref.
+
+## The kit runs one more check against an installed tool than against a checkout
+
+**Evidence: MEASURED** — same tool, same spec commit: **15** checks locally, **16** in the
+container. N=1 each.
+
+Locally we get 15 pass / 0 fail / 0 skip. Installed on the container, 16 pass / 0 fail / 0
+skip. One check simply does not exist locally, and nothing in the output says so.
+
+We have not yet identified which check it is, and we are recording the discrepancy rather
+than guessing. **The point stands regardless:** a green local run and a green container run
+are not the same evidence, and the summary line gives a reader no way to tell them apart.
