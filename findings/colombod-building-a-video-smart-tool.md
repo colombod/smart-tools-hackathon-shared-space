@@ -283,3 +283,138 @@ skip. One check simply does not exist locally, and nothing in the output says so
 We have not yet identified which check it is, and we are recording the discrepancy rather
 than guessing. **The point stands regardless:** a green local run and a green container run
 are not the same evidence, and the summary line gives a reader no way to tell them apart.
+
+---
+
+# Third round: what a bigger surface taught us
+
+The tool grew from eleven verbs to twenty-one — narration, vision indexing, colour
+transfer, look grading. That growth is what surfaced these; none of them were visible when
+the tool did one thing.
+
+## The pattern that makes a model-backed capability shippable
+
+**Evidence: MEASURED** — three independent instances in one tool, each with the figure that
+decided it. **N=3 mechanisms, one arm each.**
+
+We now have three capabilities where a model produces something unbounded, and all three
+ship. What they share is not prompt quality. It is that **the tool can check the output
+with arithmetic**:
+
+| capability | what the model produces | what the tool measures | the number |
+|---|---|---|---|
+| generated transition | an ffmpeg expression | frame sampled mid-blend, distance to each side | 5 of 6 correct; the 6th refused |
+| narration | a line per timed slot | spoken duration against the slot's budget | 4.25s into 6.00s |
+| colour transfer | *(no model at all)* | statistical distance to the reference | 98.4% of the gap closed |
+
+The third row is the control, and it is the interesting one: it needed no model, and we only
+noticed *because* we had built the measurement first and could see the model was not
+carrying any weight.
+
+**The rule this suggests for the spec:** a model-backed capability is safe to ship
+unattended when there is a **cheap deterministic check on its output**. Where that check
+exists, generation becomes defensible. Where it does not, it is a coin flip with good
+manners — and the manifest currently gives a consumer no way to tell those apart.
+
+## The intelligence seam was more capable than its schema
+
+**Evidence: OBSERVED** — a probe run before building on it; the described frame came back
+verbatim correct.
+
+We needed vision. `AgentRequest` has **no image field** — prompt, model, workspace,
+output_schema, timeouts. The obvious conclusion is that the contract does not support
+vision and needs extending.
+
+It does support it. The request carries a **`workspace`**, and the agent behind it has
+file-reading tools. Write frames to a directory, point the agent at it, and vision works. We
+probed it first with a frame carrying the text `INVOICE 4471` and got exactly that back.
+
+**Worth writing down because the wrong conclusion is the natural one.** A builder reading
+that schema would reasonably decide the seam cannot do vision and either fork it, add a
+field, or reach for a provider SDK directly — all of which break the boundary the scaffold
+exists to create.
+
+**For the spec:** when a contract's capability exceeds its field list, say so. One sentence
+in the interface docstring — *"a workspace makes any file readable, including images"* —
+would have saved the investigation, and would stop someone else adding a field that is not
+needed.
+
+## `model_backed` is a boolean; real capabilities are tiered *and* plural
+
+**Evidence: OBSERVED** — one tool, four distinct provider capabilities, none expressible.
+
+Round two noted `model_backed` cannot express a tiered capability. The bigger surface makes
+the second half of the problem obvious too — this one tool now uses **four different kinds
+of intelligence**:
+
+| capability | kind | where it runs | credential |
+|---|---|---|---|
+| transcription | speech-to-text | **locally** | none |
+| narration voice | text-to-speech | **locally** | none |
+| choosing / writing / narrating | text reasoning | remote | provider |
+| describing frames | vision | remote | provider |
+
+A consumer asking *"what AI does this tool use?"* gets a four-row table, and two of those
+rows need no credential at all. The ROADMAP question — *how do we make others aware of what
+AI providers a smart tool uses* — has no single-sentence answer once a tool does more than
+one thing, and `requires[]` cannot say which capability each entry unlocks.
+
+**Concretely:** our manifest lists four `requires[]` entries, and the only place the mapping
+from entry to capability exists is prose we wrote by hand in the `purpose` field.
+
+## Friction: local inference is viable, and the method matters more than the choice
+
+**Evidence: MEASURED** — clean-container verification of two local engines coexisting.
+**N=1 container.**
+
+Both local tiers work, with no credentials, and the numbers are comfortable:
+
+```
+faster-whisper   transcription   ~23x real time, 392 MB venv
+piper-tts        synthesis       ~17x real time, +46 MB, 60 MB voice
+```
+
+They share an `onnxruntime` without a fight — **zero version changes** when the second was
+installed, confirmed by a machine-readable package diff, then by running both engines in one
+process.
+
+**The method is the finding, not the packages.** We verified the install in a container
+*before* designing around it, as a separately-tracked piece of work. Had it conflicted, the
+whole narration design would have needed a cloud TTS and lost its credential-free promise —
+and we would have found out after building it.
+
+**And a wart any local-ONNX smart tool will hit:** under a restricted cpuset — Docker with
+`--cpuset`, most CI — onnxruntime prints a red `[E:...] pthread_setaffinity_np failed` line
+at *every* session init. Exit 0, output correct, purely cosmetic. But it is an ERROR line,
+and a caller watching stderr reasonably reads it as failure. The library offers no hook to
+suppress it. We filter that one known line and pass everything else through, because
+swallowing a real error to hide a cosmetic one is a far worse trade.
+
+## Measuring found four defects that reading never would have
+
+**Evidence: MEASURED** — four defects, each with the figure that exposed it.
+
+Not a spec finding. A finding about **how to test a smart tool**, and the pattern was
+consistent enough to be worth stating.
+
+| what looked fine | what measuring said |
+|---|---|
+| shot detection threshold `0.4` | real cuts score as low as **0.076**; a 3-shot video reported **1 shot** |
+| `--look warm` colour weights | Lab b* shift of **+0.23** — correct direction, invisible in practice |
+| a "no provider" test passing | the environment leaked a credential store; nothing was being tested |
+| every render, on every video | any file **without an audio track** failed — `-map 0:a` on a stream that does not exist |
+
+The last one is the sharpest. Screen recordings routinely have no audio and are the
+commonest thing this tool gets pointed at, yet **every single verb was broken for them** and
+no test caught it — because every fixture we had built happened to have sound.
+
+**And one where the measurement itself lied.** Grading a flat neutral grey reported two
+*opposite* looks as byte-identical. Not a filter bug: `colorbalance` weights shadows,
+midtones and highlights separately, and a flat frame has one tone for them to act on.
+Running the two filter strings through ffmpeg directly — bypassing our tool entirely — is
+what separated *"my tool is broken"* from *"my fixture is degenerate"*.
+
+**For anyone building one of these:** the deterministic tiers are exactly the part a
+conformance kit cannot check for you. It verifies a manifest and a smoke test. Whether your
+verb does the thing it claims is yours to measure, and the measurement wants a fixture
+chosen to make failure visible — which is not the same as a fixture that runs.
