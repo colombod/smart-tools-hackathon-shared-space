@@ -86,6 +86,7 @@ Add a row to the index below when you add a file.
 | File | Who | What it came from |
 |---|---|---|
 | [`findings/colombod-building-two-smart-tools.md`](findings/colombod-building-two-smart-tools.md) | colombod | Converting an Amplifier bundle into two conforming smart tools (`deep-research`, `fact-check`) — [amplifier-smart-tools-research](https://github.com/colombod/amplifier-smart-tools-research) |
+| [`colombod-building-a-video-smart-tool.md`](findings/colombod-building-a-video-smart-tool.md) | colombod | A video editing/curation tool: `requires[]` cannot express alternatives, closed sets as the safety line, generated code graded by arithmetic, and a no-provider test that passed for the wrong reason. |
 
 ---
 
