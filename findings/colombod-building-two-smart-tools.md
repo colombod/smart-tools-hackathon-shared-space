@@ -1831,6 +1831,44 @@ and in the refusal — and a test holds the embedded engine to both halves of th
 message that quietly stopped being true fails the build instead of misdirecting the next
 person.
 
+### Declaring the paths was necessary and not sufficient
+
+Shipping that, we still had a host that had to **configure two settings to proceed, and only
+found out by trying**. A refusal with good instructions is a better failure; it is still a
+failure, and the tool knew enough to avoid it.
+
+### Filling the gap without overruling
+
+**Evidence: MEASURED.** A confined host with unwritable `$HOME` and no `$TMPDIR`, same test
+that had failed with `PermissionError` above, now passing after the second release. The tool
+acquired and ran two research tasks end to end.
+
+The first release declared two write paths as settings. This one fills the gap it exposed: when
+the engine's usual directory is unwritable **and nothing named another**, the tree goes inside
+the runs directory — the one location the caller has already pointed somewhere it allows. Set
+`runs_dir` and a confined host works.
+
+The discipline that makes that safe is worth stating on its own, because it is the line
+between a helpful default and the trap that preceded it:
+
+> **Fill a gap in an intention; never overrule one.** A caller who named nothing gets a
+> working path chosen for them and is *told where it went*. A caller who named a path that
+> does not work is **refused**, never quietly relocated.
+
+The second half is not hypothetical politeness. `$AMPLIFIER_AGENT_HOME` reaches our
+resolution through the *default* tier — our default is whatever the engine would have used —
+so a naive "fall back whenever the default fails" would have silently ignored a variable the
+user had deliberately exported. That is `AMPLIFIER_HOME` again, rebuilt under our own name,
+by us, three days after writing the section about it. It took a failing test to catch, and
+the fix was to snapshot what the *caller* set before our own binding could overwrite it:
+**once you write a variable yourself, you can no longer read it to learn what someone else
+wanted.**
+
+A chosen path is also only defensible if it is *reported*: ours is a distinct provenance
+tier (`source: "fallback"`, with a `because`) in `check` and a line in the run's own event
+log. A cache appearing inside someone's evidence directory with nothing anywhere saying who
+put it there would be its own small betrayal.
+
 **When you embed someone else's runtime, you inherit its filesystem behaviour as part of your
 own contract.** Not a dependency detail: the thing that decides whether your tool runs where
 your caller runs it. The general form is not ours to fix — dependency-injected temp and cache
@@ -1853,9 +1891,10 @@ losing paid runs today.
 
 #6 (generated wrappers) is out of our scope unless something falls out for free. #3 (host
 consumption) was too, until a sandboxed host lost a paid run to a directory we had never
-decided on — so we have one thing to offer it: **a tool must declare every path it writes
-to, as settings, and refuse before it starts when one is unusable.** Evidence in the section
-above.
+decided on — so we have two things to offer it: **a tool must declare every path it writes
+to, as settings, and refuse before it starts when one is unusable**; and where a host named
+nothing, **fill the gap and report it, but never overrule a path the caller did name.**
+Evidence in the section above.
 
 ### Proposals aimed at the conformance kit rather than the prose
 
