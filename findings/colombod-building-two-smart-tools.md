@@ -1781,6 +1781,64 @@ it** — an unreadable symptom is usually an instrumentation gap wearing a hard 
 
 ---
 
+## A tool that does not own where it writes is not portable
+
+**Evidence: MEASURED.** A Codex CLI run in a sandboxed workspace, killed mid-run; then the
+same failure reproduced deliberately, fixed, and re-run end to end against a host whose
+`$HOME` was read-only and whose `$TMPDIR` did not exist.
+
+The run gathered 54 sources, paid for them, and died entering synthesis on:
+
+```
+PermissionError: [Errno 13] Permission denied: '/home/<user>/.amplifier-agent'
+```
+
+Nothing in our documentation named that directory. **We had never decided where it was.**
+Two locations were being written that the caller had never chosen and could not move:
+
+| What | Where | Chosen by |
+|---|---|---|
+| prepared-bundle cache + module clones, ~370 MB on our own box | `~/.amplifier-agent` | the embedded engine's default |
+| a scratch working directory, one per turn, never deleted | `$TMPDIR` | `tempfile.mkdtemp()` with no argument |
+
+A workstation tolerates both. A confined host — a sandboxed agent, a container, CI — tolerates
+neither, and finds out **at the first model-backed stage, after the evidence is bought**.
+
+### The part that is worth generalising
+
+Our spec conversation has been about what a smart tool *returns*. This is about what it
+*leaves behind*, and the two are the same kind of promise: a caller can only honour a
+contract it can see.
+
+> **A smart tool should declare every path it writes to, as settings, and refuse up front
+> when one is unusable.** Not "it writes somewhere" — the exact set, nameable and movable.
+
+Ours is now exactly two, `runs_dir` and `engine_home`, both settings, both reported by
+`check` with a writable flag, and a model-backed verb refuses before it starts if either is
+unusable, naming the path, the tier that chose it and the setting that moves it. A host
+confining writes points two settings at its workspace and is done.
+
+### The trap underneath it, which is the more interesting half
+
+The obvious lever was the wrong one, **silently**. `AMPLIFIER_HOME` is the variable the
+storage layer reads, so it is what anyone reaching for a knob exports first — and the engine
+**overwrites it at import**. Exporting it does nothing at all, with no warning. The real
+lever is `AMPLIFIER_AGENT_HOME`.
+
+An agent debugging this in a sandbox will try `AMPLIFIER_HOME` first, watch it fail
+identically, and conclude the problem is elsewhere. So the tool now *says so* — in `check`
+and in the refusal — and a test holds the embedded engine to both halves of that claim, so a
+message that quietly stopped being true fails the build instead of misdirecting the next
+person.
+
+**When you embed someone else's runtime, you inherit its filesystem behaviour as part of your
+own contract.** Not a dependency detail: the thing that decides whether your tool runs where
+your caller runs it. The general form is not ours to fix — dependency-injected temp and cache
+roots would be the real answer — but a tool that names, checks and refuses is enough to stop
+losing paid runs today.
+
+---
+
 ## What we intend to feed back
 
 **Evidence: SUMMARY** — a routing list, not a claim. Each item's evidence is whatever its own section carries.
@@ -1793,8 +1851,11 @@ it** — an unreadable symptom is usually an instrumentation gap wearing a hard 
 | unnamed: large results | the artifact-plus-pointer convention, and navigation hints carried in the result |
 | #5 continuing a smart call | evidence either way. DTU's model calls are single-turn-per-boot with no session continuation, which is evidence the need is smaller than it looks; our staged runs will test that directly |
 
-#3 (host consumption) and #6 (generated wrappers) are out of our scope unless something
-falls out for free.
+#6 (generated wrappers) is out of our scope unless something falls out for free. #3 (host
+consumption) was too, until a sandboxed host lost a paid run to a directory we had never
+decided on — so we have one thing to offer it: **a tool must declare every path it writes
+to, as settings, and refuse before it starts when one is unusable.** Evidence in the section
+above.
 
 ### Proposals aimed at the conformance kit rather than the prose
 
