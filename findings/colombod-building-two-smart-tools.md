@@ -1918,3 +1918,82 @@ is the artifact and it stays here.
 
 **It lives in a workspace with no remote.** That is a known risk, accepted for now, and the
 reason to settle the channel before teardown rather than after.
+
+---
+
+# The discovery bug every one of our tools shipped
+
+**Evidence: REPORTED then MEASURED** — a real user, in Codex, on macOS. Then five catalog
+entries read for comparison. **N=3 of our tools, all defective; 5 others surveyed.**
+
+A user installed our video tool from the catalog and found they had to **name it explicitly
+every time**. "Cut this down to the bit where she explains pricing" reached for nothing.
+
+The cause was one line in the skill frontmatter:
+
+```yaml
+description: >-
+  ... Triggers on "vid".
+```
+
+That is an instruction to match the **tool's own name**. The skill was discoverable only by
+someone who already knew it existed — the exact inverse of the point. Our other two tools
+had a milder version of the same thing: a trailing keyword list (`Triggers on "deep
+research", "research this", ...`). Better, because they also carried a "Reach for it when"
+clause and four enumerated uses — but still telling a matcher to look for **phrases**, and
+nobody asking a real question says "deep research" out loud.
+
+**All three of our tools shipped this.** Two of them passed conformance at 15/15 while doing
+it, because nothing checks whether a description is reachable.
+
+## What the catalog does, read rather than guessed
+
+We read how five other tools describe themselves before rewriting ours:
+
+| tool | trigger clause |
+|---|---|
+| **tmux** | *"Reach for it when ... **'what needs me right now?'** is the question"* |
+| smart-tool-creator | "Use when you want to package domain expertise ..." |
+| github-repos | "Use when you want to know ..." |
+| outtake | capability list only |
+| possibly | one sentence, no trigger clause |
+
+**`tmux` is the only one that quotes the question its user would actually be asking.** That
+is the move worth copying, and it is the difference between a description that reads well to
+a person browsing a catalog and one a matcher can bind to.
+
+**Not one of the five carries a negative clause.** None says what it is *not* for.
+
+## Three things we changed, offered as a convention
+
+**1. Open on the user's words, not the tool's capabilities.** Ours now lead with five or six
+real phrasings — *"is any of this actually true?"*, *"check the claims in this draft before
+it goes out"*, *"stick these three clips together"*, *"where does he mention the deadline?"*
+— **before** any capability is listed.
+
+**2. Carry a negative clause.** A skill that fires on the wrong task costs more than one that
+quietly misses, and nothing in the current spec or the kit asks for one.
+
+**3. Neighbouring tools should name each other as their negative case.** This is the one we
+would not have thought of without shipping a pair. `deep-research` and `fact-check` are
+adjacent and the boundary is genuinely easy to get wrong, so each now says so explicitly —
+*"do not use it for claims you already have, that is fact-check"* and *"do not use it for an
+open question with no claim in it yet, that is deep-research"*. Neither did before. **A
+catalog of near-neighbours needs this or the wrong one wins on phrasing luck.**
+
+## What this suggests for the spec and the kit
+
+`use_cases` exists in the manifest and ours was **a single sentence copy-pasted from the
+description** — which gave a matcher nothing. That passed conformance too.
+
+Two cheap checks would have caught all of it:
+
+- **`use_cases` must not duplicate `description`.** Ours did, in two tools, for weeks.
+- **Warn on a description containing "triggers on", a bare keyword list, or the tool's own
+  name as its only hook.** That is a lint, not a judgment call.
+
+And one honest limit on what we can claim: we have **fixed** this, and we have not yet
+**measured** the fix. The rewrite is reasoned from a real failure and a five-tool survey,
+not from an A/B. Whether an intent-shaped description actually gets picked up by Codex
+without prompting is the next thing to test, and if it does not, that result matters more
+than the prose.
