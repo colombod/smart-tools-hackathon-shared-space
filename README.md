@@ -88,9 +88,17 @@ it**, so spend the time there.
 AGENTS.md    conventions, in the form an AI agent picks up automatically
 findings/    one file per person per body of work
 proposals/   concrete changes to the spec or the conformance kit
+open-questions.md  what we did NOT settle, and what would settle it
 presentations/  decks built from the evidence in this repo
 evidence/    artifacts a finding rests on — transcripts, outputs, run directories
 ```
+
+**Four kinds of thing live here, and they are not interchangeable.** A finding is what
+building taught us, with the evidence attached. A proposal is a concrete change to the spec
+or the kit. An open question is something we could not settle and a description of what
+would settle it. And a negative result — a thing we tried that did not work — belongs in a
+finding beside the positives, not quietly dropped: three of ours were worth more than the
+features they came from.
 
 Two standing rules worth knowing before you add anything: **never edit someone else's
 findings file** — write your own and reference theirs — and **nothing with a secret in it**,
@@ -113,6 +121,25 @@ Add a row to the index below when you add a file.
 
 ---
 
+## What the tools actually do, measured
+
+Numbers rather than adjectives, so a reader can tell a claim from a hope. Every one is
+reproducible from the repos linked above.
+
+| claim | how it was checked | result |
+|---|---|---|
+| a generated ffmpeg transition works | rendered, then frames sampled mid-blend | 5 of 6 correct; the 6th **refused itself** |
+| colour transfer matches a reference | Lab distance, before and after | **98.4%** of the gap closed |
+| a narration line fits its slot | spoken audio measured against the slot's budget | 4.25s into a 6.00s slot |
+| a vignette darkens the edges | corner and centre sampled separately | corner **37.3%** darker |
+| retime lands on the duration it promises | container duration vs arithmetic | **exact** at 0.5x, 0.75x, 1.5x, 2x |
+| deterministic paths need no credential | run in a container with none, asserted absent | holds — and **failed once** for the wrong reason |
+| it installs the way a user installs it | `uv tool install` from git, in CI, every push | green in both repos |
+
+The pattern under all of them: **the model writes, arithmetic judges.** Where a cheap
+deterministic check exists on a model's output, generation is defensible. Where it does not,
+it is a coin flip with good manners.
+
 ## Proposals
 
 Concrete changes, addressed to whoever owns the thing being changed.
@@ -125,6 +152,15 @@ Concrete changes, addressed to whoever owns the thing being changed.
 | [`proposals/output-is-bigger-than-the-response.md`](proposals/output-is-bigger-than-the-response.md) | the spec | A smart tool's output routinely exceeds its response and the caller's context. Proposes one `parts` vocabulary covering size, time and fidelity — a proxy you can act on, a cost-declared fidelity ladder, affordances with meaning, and a growing/final/**dead** distinction for detached calls |
 
 ---
+
+## Still open
+
+**[`open-questions.md`](open-questions.md)** — what we did not settle, ordered by how cheaply
+a real answer could be had. Includes the honest gap in our loudest finding: we fixed every
+skill description in all three tools and **never measured whether the fix works**.
+
+Add to it rather than starting a new file. An open question with a named experiment beside
+it is worth more than a finding nobody acts on.
 
 ## Writing a finding that survives you
 
