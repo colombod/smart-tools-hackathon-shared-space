@@ -1,5 +1,13 @@
 # What a video smart tool taught us about the spec
 
+**The tool:** [colombod/amplifier-smart-tools-video](https://github.com/colombod/amplifier-smart-tools-video)
+— `vid`, in the [catalog](https://github.com/microsoft/amplifier-smart-tools-catalog/tree/main/tools/vid).
+
+```bash
+uv tool install 'vid[all] @ git+https://github.com/colombod/amplifier-smart-tools-video'
+vid --help
+```
+
 Building `vid` — a video editing/curation smart tool — after `deep-research` and
 `fact-check`. Different enough from those two to press on parts of the spec they never
 touched: three AI capabilities instead of one, a hard system dependency, and a genuine

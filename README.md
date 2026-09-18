@@ -37,6 +37,29 @@ Things that do **not** belong here:
 
 ---
 
+## What we built
+
+Every finding here comes out of one of these. All three are in the
+[catalog](https://github.com/microsoft/amplifier-smart-tools-catalog).
+
+| tool | what it does | repo |
+|---|---|---|
+| **`vid`** | Video editing and curation — trim, stitch with transitions, retime, caption, grade, narrate. Finds a moment by what was SAID or SHOWN. 21 verbs, chainable into one ffmpeg pass. | [amplifier-smart-tools-video](https://github.com/colombod/amplifier-smart-tools-video) |
+| **`deep-research`** | Researches a question across many sources; returns a brief plus the evidence on disk. | [amplifier-smart-tools-research](https://github.com/colombod/amplifier-smart-tools-research) |
+| **`fact-check`** | Checks claims independently and returns a verdict per claim with its sources. | [amplifier-smart-tools-research](https://github.com/colombod/amplifier-smart-tools-research) |
+
+```bash
+uv tool install 'vid[all] @ git+https://github.com/colombod/amplifier-smart-tools-video'
+uv tool install 'git+https://github.com/colombod/amplifier-smart-tools-research#subdirectory=tools/deep-research'
+uv tool install 'git+https://github.com/colombod/amplifier-smart-tools-research#subdirectory=tools/fact-check'
+```
+
+Both repos run CI on every push: tests, the external conformance kit, and an
+install-from-git job that takes the path a real user takes. A finding that cites one of
+these is citing something you can install and check yourself.
+
+---
+
 ## Build the tool before you write about it
 
 **[DavidKoleczek/amplifier-smart-tool-creator](https://github.com/DavidKoleczek/amplifier-smart-tool-creator)**
