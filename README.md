@@ -116,6 +116,7 @@ Add a row to the index below when you add a file.
 
 | File | Who | What it came from |
 |---|---|---|
+| [`robotdad-building-creative-smart-tools.md`](findings/robotdad-building-creative-smart-tools.md) | robotdad | Possibly, Unfold, Outtake and Stories: continuation, revision-bound review, recovery, shared budgets, portable output and the limits of deterministic checks. Source evidence and 25 focused tests. |
 | [`findings/colombod-building-two-smart-tools.md`](findings/colombod-building-two-smart-tools.md) | colombod | Converting an Amplifier bundle into two conforming smart tools (`deep-research`, `fact-check`) — [amplifier-smart-tools-research](https://github.com/colombod/amplifier-smart-tools-research) |
 | [`colombod-building-a-video-smart-tool.md`](findings/colombod-building-a-video-smart-tool.md) | colombod | A video editing/curation tool: `requires[]` cannot express alternatives, closed sets as the safety line, generated code graded by arithmetic, and a no-provider test that passed for the wrong reason. Second round adds what a credential-free container found -- a shipped dead-pointer refusal, an over-stated credential requirement, and install identity vs install success. Third round, from a 21-verb surface: what makes a model-backed capability shippable, an intelligence seam more capable than its schema, four kinds of AI in one tool, and four defects only measurement found. Plus the discovery bug all three of our tools shipped: skill descriptions that matched the tool's NAME instead of the user's intent, found by a real user in Codex. |
 
