@@ -1,0 +1,124 @@
+=== deep-research sources --help ===
+---
+name: deep-research sources
+description: A run's citations as structured data, so the evidence can be walked without pulling the whole report into context.
+---
+
+# deep-research sources
+
+**Deterministic.** Runs with no provider configured and no credentials of any kind, costs nothing, and returns the same answer for the same input.
+
+## Required
+
+- `run_id` (positional)
+
+## Optional
+
+- `--category` (one of academic, news, docs, other; default: none): only sources of this kind
+- `--runs-dir` (default: none): where runs live for this invocation
+
+## Worked invocation
+
+```bash
+deep-research sources dr-82baa98f --category academic
+```
+
+## Result
+
+`run_id`, `count`, `sources` (list of `{id, url, title, category}`), `inherited_from`.
+
+## Failures
+
+- RunNotFoundError (exit 1) if the run has no `sources.json`.
+
+## Reading the result
+
+One JSON document on stdout. Success is `{"result": ...}`; failure is `{"error": {"code", "message", "remedy", "affordances"}}` with a non-zero exit. **A refusal carries `affordances` too** -- named next moves, each free and each needing no credential, so being refused is never a dead end. Progress and diagnostics go to stderr, never stdout.
+
+For the whole tool rather than this one verb: `deep-research --help`.
+
+=== fact-check check-claims --help ===
+---
+name: fact-check check-claims
+description: Assess each claim against evidence a research run already gathered, and return one verdict per claim: supported, refuted, unverifiable, or opinion. Model-backed: it makes one model call per claim and fails saying so when no reasoning provider is configured, rather than guessing. Evidence is not gathered here -- pass --from-run.
+---
+
+# fact-check check-claims
+
+**This verb spends money and calls a model.** It may answer differently on a second run, and it fails saying so rather than returning a lesser answer when no backend is configured.
+
+## Optional
+
+- `--claim` (default: none): a claim to check; repeatable
+- `--claims-file` (default: none): one claim per line
+- `--from-run` (default: none): use this run's evidence instead of gathering it again
+- `--strict` (default: False): treat every claim as complex: slower, more expensive, and `estimate` says so
+- `--runs-dir` (default: none): where runs live for this invocation
+- `--timeout-ms` (default: none): wall-clock budget for one reasoning turn
+- `--inline` (default: none): return the whole report in the envelope, whatever its size
+- `--no-inline` (default: none): always return a pointer, never the report itself
+- `--quiet` (default: False): do not stream progress to stderr
+- `--detach` (default: False): return part one immediately and continue the work in the background. ONE MODEL CALL PER CLAIM -- estimated 330s for three claims, 959s for ten, and that estimator is known to under-predict
+
+## Worked invocation
+
+```bash
+fact-check check-claims --from-run dr-70ce2d29 --claim 'CRDTs converge without coordination.'
+```
+
+## Result
+
+`run_id`, `status`, `brief`, `tally` (counts per verdict -- small, and it IS the answer), `claim_count`, `source_count`, `inherited_from` (the run this evidence came from), `confidence`, `path` (the run directory), `report_bytes`, `inline`, `usage`, `next` (the exact `verdicts`/`sources` commands to go further). `unverifiable` means CHECKED and no adequate evidence either way -- never a synonym for `refuted`. With `--detach`, part one comes back instead: `accepted`, `detached`, `pid`, `claim_count`, `inherited_from`, `not_yet_true`, and `poll_again_in_seconds`.
+
+## Failures
+
+- NoProviderError (exit 3): no reasoning provider is configured.
+- UsageError (exit 2): no claims given (neither `--claim` nor `--claims-file`), or no `--from-run`.
+- NoEvidence (exit 1): the named run has no sources to check claims against.
+- SmartToolError wrapping ClaimUncheckable (exit 1): a claim could not be checked after `max_attempts` rejections -- distinct from `unverifiable`, which means checked and the evidence was inadequate. Verdicts already recorded before the stop are kept.
+
+## Reading the result
+
+One JSON document on stdout. Success is `{"result": ...}`; failure is `{"error": {"code", "message", "remedy", "affordances"}}` with a non-zero exit. **A refusal carries `affordances` too** -- named next moves, each free and each needing no credential, so being refused is never a dead end. Progress and diagnostics go to stderr, never stdout.
+
+For the whole tool rather than this one verb: `fact-check --help`.
+
+=== fact-check verdicts --help ===
+---
+name: fact-check verdicts
+description: One entry per claim: the claim, its verdict, the confidence, the reasoning and the sources it rests on. `unverifiable` means checked and no adequate evidence either way -- never a synonym for refuted.
+---
+
+# fact-check verdicts
+
+**Deterministic.** Runs with no provider configured and no credentials of any kind, costs nothing, and returns the same answer for the same input.
+
+## Required
+
+- `run_id` (positional)
+
+## Optional
+
+- `--verdict` (one of supported, refuted, unverifiable, opinion; default: none): only claims with this verdict
+- `--claim-index` (default: none): only claim number N
+- `--runs-dir` (default: none): where runs live for this invocation
+
+## Worked invocation
+
+```bash
+fact-check verdicts fc-1a2b3c4d --verdict refuted
+```
+
+## Result
+
+`run_id`, `count`, `tally` (counts per verdict), `verdicts` (the filtered list).
+
+## Failures
+
+- UsageError (exit 2) if this run is not a fact-check run and has no `verdicts.json` -- use `read` for a research run instead.
+
+## Reading the result
+
+One JSON document on stdout. Success is `{"result": ...}`; failure is `{"error": {"code", "message", "remedy", "affordances"}}` with a non-zero exit. **A refusal carries `affordances` too** -- named next moves, each free and each needing no credential, so being refused is never a dead end. Progress and diagnostics go to stderr, never stdout.
+
+For the whole tool rather than this one verb: `fact-check --help`.

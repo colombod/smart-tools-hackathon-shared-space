@@ -1,0 +1,15 @@
+=== every run this sweep created ===
+fc-45813ee9 fact-check complete reported_cost= None
+fc-e62be46c fact-check failed reported_cost= None
+dr-e4e83946 deep-research running reported_cost= None
+fc-55d7c403 fact-check failed reported_cost= None
+dr-6f447489 deep-research complete reported_cost= None
+dr-4aee4213 deep-research failed reported_cost= None
+dr-dd376b7d deep-research failed reported_cost= None
+
+=== killed run dr-e4e83946 on disk ===
+detached.log
+events.jsonl
+raw
+run.json
+status: running usage: {}

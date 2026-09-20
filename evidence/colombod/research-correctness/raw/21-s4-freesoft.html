@@ -1,0 +1,52 @@
+<HTML>
+<HEAD>
+<TITLE>3.1. Name space definitions</TITLE>
+</HEAD>
+<BODY>
+<SCRIPT type="text/javascript" src="../../pagetop.js"></SCRIPT>
+<B>Connected: An Internet Encyclopedia</B>
+<BR>
+<EM>3.1. Name space definitions</EM><BR>
+<HR><CENTER>
+<B>Up:</B>
+<A HREF="../../index.htm">Connected: An Internet Encyclopedia</A><BR>
+<B>Up:</B>
+<A HREF="../index.htm">Requests For Comments</A><BR>
+<B>Up:</B>
+<A HREF="index.htm">RFC 1035</A><BR>
+<B>Up:</B>
+<A HREF="10.htm">3. DOMAIN NAME SPACE AND RR DEFINITIONS</A><BR>
+</CENTER>
+<B>Prev:</B> <A HREF="10.htm">3. DOMAIN NAME SPACE AND RR DEFINITIONS</A><BR>
+<B>Next:</B> <A HREF="12.htm">3.2. RR definitions</A><BR>
+<HR><P>
+<H3>3.1. Name space definitions</H3><P>
+<TITLE>3.1. Name space definitions</TITLE>
+<P>
+Domain names in messages are expressed in terms of a sequence of labels.
+Each label is represented as a one octet length field followed by that
+number of octets.  Since every domain name ends with the null label of
+the root, a domain name is terminated by a length byte of zero.  The
+high order two bits of every length octet must be zero, and the
+remaining six bits of the length field limit the label to 63 octets or
+less.
+<P>
+To simplify implementations, the total length of a domain name (i.e.,
+label octets and label length octets) is restricted to 255 octets or
+less.
+<P>
+Although labels can contain any 8 bit values in octets that make up a
+label, it is strongly recommended that labels follow the preferred
+syntax described elsewhere in this memo, which is compatible with
+existing host naming conventions.  Name servers and resolvers must
+compare labels in a case-insensitive manner (i.e., A=a), assuming ASCII
+with zero parity.  Non-alphabetic codes must match exactly.
+<P>
+<P>
+<P><HR>
+<CENTER><B>Next:</B> <A HREF="12.htm">3.2. RR definitions</A></CENTER><HR>
+<B>Connected: An Internet Encyclopedia</B>
+<BR>
+<EM>3.1. Name space definitions</EM>
+</BODY>
+</HTML>

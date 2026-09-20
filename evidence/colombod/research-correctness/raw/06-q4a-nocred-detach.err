@@ -1,0 +1,1 @@
+{"error": {"code": "no_provider", "message": "The research verb needs the Perplexity backend and no credential is configured.", "remedy": "Set PERPLEXITY_API_KEY, or put perplexity in ~/.config/amplifier-research/credentials.toml with mode 0600. Every deterministic verb keeps working without it."}}

@@ -1,0 +1,64 @@
+{
+    "result": {
+        "artifacts": [
+            {
+                "bytes": 7048,
+                "lines": 216,
+                "name": "sources.json"
+            }
+        ],
+        "duration_ms": 233526,
+        "failure": {
+            "code": "attempts_exhausted",
+            "message": "The synthesise stage was rejected 3 times and the attempt budget is spent.",
+            "remedy": "Every attempt is kept in attempts.json with the reason it was rejected. Raise max_attempts if the model was close, or look at the rejections -- repeated identical ones usually mean the evidence cannot support the question as asked.",
+            "stage": "synthesise"
+        },
+        "liveness": {
+            "poll_again_in_seconds": null,
+            "state": "final",
+            "why": "the run finished with status 'failed'"
+        },
+        "path": "/home/colombod/.local/state/amplifier-research/runs/dr-dd376b7d",
+        "run_id": "dr-dd376b7d",
+        "stage": "synthesise",
+        "stages": [
+            {
+                "duration_ms": 11000,
+                "ended_at": "2026-09-20T11:46:17Z",
+                "name": "scope",
+                "started_at": "2026-09-20T11:46:06Z",
+                "status": "complete"
+            },
+            {
+                "duration_ms": 12000,
+                "ended_at": "2026-09-20T11:46:29Z",
+                "name": "gather",
+                "started_at": "2026-09-20T11:46:17Z",
+                "status": "complete"
+            },
+            {
+                "ended_at": "2026-09-20T11:49:59Z",
+                "name": "synthesise",
+                "started_at": "2026-09-20T11:46:29Z",
+                "status": "failed"
+            },
+            {
+                "name": "report",
+                "status": "not_started"
+            }
+        ],
+        "stages_complete": 2,
+        "stages_total": 4,
+        "status": "failed",
+        "tool": "deep-research",
+        "usage": {
+            "attempts": 1,
+            "attempts_discarded": 0,
+            "cost_usd": "0.02683",
+            "discarded_cost_usd": null,
+            "tokens_in": 12515,
+            "tokens_out": 1917
+        }
+    }
+}

@@ -1,0 +1,11 @@
+=== fact-check brief (tally supposed to lead it) ===
+4 claims assessed: 1 supported, 1 refuted, 1 unverifiable, 1 opinion (not a factual claim). The core RFC 1035 figures (63-octet label, 255-octet name) are solid; problems arose only when claims went beyond what the RFC text itself states -- either substituting a different number, asserting an unaddressed historical cause, or making a value judgment.
+
+=== deep-research render dr-6f447489 --format bibliography ===
+{
+ "bytes": 1096,
+ "format": "bibliography",
+ "inline": true,
+ "run_id": "dr-6f447489",
+ "text": "# Sources for dr-6f447489\n\n## News\n\n- [s2] What is the real maximum length of a DNS name?\n  https://devblogs.microsoft.com/oldnewthing/20120412-00/?p=7873\n- [s8] Computer names\n  https://learn.microsoft.com/en-us/troubleshoot/windows-server/active-directory/naming-conventions-for-computer-domain-site-ou\n\n## Docs\n\n- [s1] [PDF] 1035 ISI November 1987 Obsoletes: RFCs 882, 883, 973 DOMAIN N\n  https://www.rfc-editor.org/rfc/pdfrfc/rfc1035.txt.pdf\n\n## Other\n\n- [s3] Names, Labels, and the Namespace Tree - spec.school\n  https://spec.school/topics/dns/lessons/names-and-labels\n- [s4] 3.1. Name space definitions\n  https://www.freesoft.org/CIE/RFC/1035/11.htm\n- [s5] RFC 9267\n  https://tex2e.github.io/rfc-translater/html/rfc9267.html\n- [s6] Regexp::Common::dns\n  https://metacpan.org/release/CREIN/Regexp-Common-dns-0.00_01/view/lib/Regexp/Common/dns.pm\n- [s7] Re: domain name labels are limited to 63 characters - MHonArc\n  https://www.mhonarc.org/archive/html/spf-discuss/2004-11/msg01329.html\n- [s9] what's a valid domain name?\n  https://groups.google.com/g/comp.protocols.dns.bind/c/8Lep8lp5TBU\n"
+}

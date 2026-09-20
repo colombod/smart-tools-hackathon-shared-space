@@ -1,0 +1,97 @@
+Spec adherence of /mnt/linuxdata/workspaces/hackathon-smart-tools/amplifier-smart-tools-audio:
+  adheres library-holds-every-capability: pyproject.toml:44 declares the sole shipped executable surface, `aud`, and points it at `aud.cli:main`.
+  adheres cli-is-thin: src/aud/cli.py:415-433 routes the simple commands directly to library functions, with the `plan` path only reading an input file into the library plan value.
+  adheres help-comes-from-library: src/aud/lib.py:180-182 exposes the top-level skill through the library function `skill()`.
+  adheres genuinely-model-backed: src/aud/lib.py:1339-1359: `advise` analyzes the caller's audio, resolves a configured backend, and passes those measurements and the selected model into the advisor.
+  adheres ai-capabilities-identifiable: src/aud/core/skill.py:11-68: The sole capability table labels every verb as `deterministic` or `model-backed`, specifically marking `advise` and `master` as model-backed and credential-dependent.
+  adheres no-provider-failure-names-remedy: src/aud/intelligence/interface.py:283-300: When no configured provider credential is found, `resolve_backend` raises `provider_credential_missing` with both the accepted credential names and a configuration-document remedy.
+  deviates tool-skill-content: src/aud/core/skill.py:75-128: This is the complete fixed line list rendered by `aud --help`; it provides pipelines, capability kinds, an output envelope, and the speech-extra caveat, but no copy-pasteable installation command or installation section.
+  deviates capability-skills-complete: src/aud/verbdoc.py:11-850: `VERB_DOCS` defines a help skill for every exposed top-level capability, but the entries do not provide a failures section or per-capability deterministic/model-backed classification; only the two model-backed entries mention their credential failure inline.
+  deviates agent-skill-is-thin: skills/aud/SKILL.md:50-58: The shipped Agent Skill includes a capability-by-capability prerequisite matrix, model size, extra names, and provider-variable list that can drift from runtime help.
+  deviates manifest-describes-the-tool: src/aud/SMART_TOOL.md:6-16: The manifest description correctly describes audio finishing and provides agent-selection phrases before enumerating the supported outcomes.
+  deviates context-accepted-as-data: src/aud/cli.py:465 passes the curve argument unchanged to lib.curve_apply rather than reading its JSON content at the CLI layer.
+  deviates stdout-results-stderr-diagnostics: src/aud/cli.py:528-529 implements _print_error with print(...) and no file=sys.stderr, so every AudError JSON envelope is written to stdout.
+  deviates artifact-location-named: src/aud/lib.py:1266-1267 writes render output to caller-supplied out_path and returns that unnormalized value as out_path.
+  adheres files-outside-install-tree: src/aud/lib.py:61 locates the optional configuration file under the user's home configuration directory, and src/aud/lib.py:139 opens it only for reading.
+  deviates failure-names-remedy: src/aud/lib.py:145-175 coerces environment-backed numeric configuration with `int()`/`float()` without translating a bad value into an `AudError`.
+  deviates partial-results-are-failures: src/aud/dsp/analysis.py:133-137 catches every exception from loudness-range measurement and continues instead of failing the analysis.
+  deviates prerequisite-failures-match-manifest: src/aud/SMART_TOOL.md:43-54 declares `ai-provider` satisfied by any listed API key, but does not declare the Azure endpoint prerequisite.
+
+Deviations:
+
+  tool-skill-content
+    spec: It says what an agent would otherwise get wrong: when to reach for the tool and when not, install and prerequisites, worked invocations, sharp edges, where to read more. The Agent Skills ceiling of 500 lines applies.
+    evidence: src/aud/core/skill.py:75-128: This is the complete fixed line list rendered by `aud --help`; it provides pipelines, capability kinds, an output envelope, and the speech-extra caveat, but no copy-pasteable installation command or installation section.
+    evidence: src/aud/core/skill.py:85-110: The rendered skill gives worked chained invocations and a chain-order sharp edge, but it has no statement of the tool's non-goals such as mixing, multitracks, transcription output, video, or music generation.
+    evidence: src/aud/SMART_TOOL.md:19-22: The manifest body does contain those non-goals, showing that they were omitted from the rendered tool skill rather than being unavailable documentation.
+    suggestion: Add an Install/prerequisites section with copy-pasteable commands to `aud --help`, and state the mixing, multitrack, transcription-output, video, and music-generation non-goals there. Keep the rendered skill below 500 lines.
+
+  capability-skills-complete
+    spec: That is the capability's skill, required for every capability: the same shape as the tool's, scoped to one capability, and carrying what the tool's skill leaves out: when to use it, whether it is deterministic or model-backed, every argument and what it is for, a worked invocation, the result, and the failures.
+    evidence: src/aud/verbdoc.py:11-850: `VERB_DOCS` defines a help skill for every exposed top-level capability, but the entries do not provide a failures section or per-capability deterministic/model-backed classification; only the two model-backed entries mention their credential failure inline.
+    evidence: src/aud/verbdoc.py:228-231: The `cut` capability skill says the capability is not built and will return `not_implemented`, explicitly claiming that its edit-point code does not exist.
+    evidence: src/aud/dsp/engine.py:80-126: The render engine implements both `_apply_cut` and `_apply_strip_silence`; src/aud/dsp/engine.py:502-503 registers both handlers, so the rendered `cut` and `strip-silence` skills describe their present behavior incorrectly.
+    suggestion: For every capability skill, add explicit Kind, Result, and Failures sections, including non-zero conditions and resulting state. Remove the stale `cut` and `strip-silence` not-implemented status text and document their implemented render behavior instead.
+
+  agent-skill-is-thin
+    spec: The skill carries the manifest's name and description, the install commands, and the instruction to run `--help` and follow it. Nothing more.
+    evidence: skills/aud/SKILL.md:50-58: The shipped Agent Skill includes a capability-by-capability prerequisite matrix, model size, extra names, and provider-variable list that can drift from runtime help.
+    evidence: skills/aud/SKILL.md:66-74: It restates `--help` guidance and adds a capability-specific `analyze` instruction rather than delegating runtime guidance to the tool.
+    evidence: skills/aud/SKILL.md:78-104: It carries a detailed multi-capability invocation, chain semantics, preset names, and result behavior, all of which duplicate or can drift from `aud --help`.
+    suggestion: Reduce the Agent Skill to its frontmatter, a short tool summary, installation commands, and an instruction to run `aud --help` followed by the relevant `aud <capability> --help`. Move or retain all capability, prerequisites, pipeline, and result details only in runtime help.
+
+  manifest-describes-the-tool
+    spec: **`description`** says what the tool does and when to reach for it, in that order. **`use_cases`** are the concrete jobs the tool is for. These are selection aids, not a capability list, and they should read like things a person wants, not like functions the tool exposes.
+    evidence: src/aud/SMART_TOOL.md:6-16: The manifest description correctly describes audio finishing and provides agent-selection phrases before enumerating the supported outcomes.
+    evidence: src/aud/SMART_TOOL.md:17-18: It then promises that every verb appends to a plan, which is not true of capabilities such as analysis, detection, verification, host checks, configuration, and manifest inspection.
+    evidence: src/aud/cli.py:144-157: The CLI registers `manifest`, `check`, `analyze`, `config`, and `plan` as distinct verbs, confirming that the tool exposes non-stage verbs; src/aud/core/skill.py:120-124 also distinguishes raw regions output from plan output.
+    suggestion: Change “Every verb appends to a plan” to “Every chain stage appends to a plan,” and retain the separate wording for read-only/reporting capabilities so the manifest does not promise a behavior those capabilities do not provide.
+
+  context-accepted-as-data
+    spec: **The payload is data, not a reference.** At the library level, a caller passes the actual content. This keeps the library free of assumptions about where the caller's material lives and keeps it usable from processes that have no filesystem in common with the caller. A CLI wrapper may accept a file path and read it into the payload, because that is a convenience of the command line, not a change to what the library accepts.
+    evidence: src/aud/cli.py:465 passes the curve argument unchanged to lib.curve_apply rather than reading its JSON content at the CLI layer.
+    evidence: src/aud/lib.py:1493 defines curve_apply with curve_path: str and no curve-content parameter, so library callers can only supply a filesystem reference for the extracted curve.
+    evidence: src/aud/lib.py:1499 loads that curve path inside the library, requiring the caller and tool to share a filesystem.
+    suggestion: Add a curve-content parameter (for example, a parsed curve structure) to the library-level apply capability, and have the CLI read its curve file before calling it. Retain the path-taking helper or CLI convenience if useful, but ensure library callers can provide the curve as data.
+
+  stdout-results-stderr-diagnostics
+    spec: Stdout carries the requested result, whether text or structured data. Stderr carries diagnostics such as progress messages and warnings, keeping them separate from results that callers may pipe to another command or save to a file.
+    evidence: src/aud/cli.py:528-529 implements _print_error with print(...) and no file=sys.stderr, so every AudError JSON envelope is written to stdout.
+    evidence: src/aud/cli.py:565-572 sends command-line usage failures through _print_error before returning exit status 2.
+    evidence: src/aud/cli.py:584-586 and src/aud/cli.py:594-603 likewise send capability and unexpected-error envelopes through _print_error.
+    evidence: src/aud/cli.py:540-542 correctly directs advise progress/reasoning to sys.stderr, demonstrating that diagnostics can be separated on this surface.
+    suggestion: Change _print_error to print its JSON envelope with file=sys.stderr. Keep successful result serialization on stdout and preserve the existing non-zero exits.
+
+  artifact-location-named
+    spec: Where a capability writes an artifact, such as a profile, document, or configuration, to a file, the result clearly identifies its location.
+    evidence: src/aud/lib.py:1266-1267 writes render output to caller-supplied out_path and returns that unnormalized value as out_path.
+    evidence: src/aud/lib.py:1489-1490 writes an extracted curve to caller-supplied out and returns that unnormalized value as curve_path.
+    evidence: src/aud/lib.py:1513-1514 writes curve-application audio and returns the unnormalized out_path.
+    evidence: src/aud/cli.py:524-525 serializes these library result fields to stdout unchanged, so a relative destination has no stated base in either the library result or CLI result.
+    suggestion: Resolve each artifact destination to an absolute path before writing and return that resolved path in the result (including master’s propagated render result). Alternatively, explicitly include a stated base directory alongside each relative artifact path.
+
+  failure-names-remedy
+    spec: Failures are loud and they name the remedy. A caller should never have to infer what went wrong from an empty result.
+    evidence: src/aud/lib.py:145-175 coerces environment-backed numeric configuration with `int()`/`float()` without translating a bad value into an `AudError`.
+    evidence: src/aud/cli.py:587-606 turns that uncaught `ValueError` into an `internal_error` whose remedy is to report an aud bug, rather than telling the caller which `AUD_*` value to correct.
+    evidence: docs/CONFIGURATION.md:100-109 promises that wrong configuration is fatal and names the offending setting, value, and expected type, which the implementation above does not do.
+    evidence: src/aud/lib.py:1481-1490 writes a curve with an unguarded `Path.write_text`, so an unwritable destination or a partial write also reaches the generic internal-error path rather than an actionable output-path failure.
+    suggestion: Translate configuration coercion and curve-output I/O exceptions into specific `AudError`s that name the setting or path and the corrective value or writable destination. Write curve output atomically (or state whether a partial file remains and tell the caller to remove it) before retrying.
+
+  partial-results-are-failures
+    spec: **A partial result** is a failure unless the capability documents partial completion as a valid outcome, in which case the result says which parts succeeded. A capability never silently returns the portion that worked.
+    evidence: src/aud/dsp/analysis.py:133-137 catches every exception from loudness-range measurement and continues instead of failing the analysis.
+    evidence: src/aud/dsp/analysis.py:155-172 returns the otherwise-complete measurement document with `loudness_range_lu` converted to `null`, without a status, error reason, or remedy for that missing measurement.
+    evidence: skills/aud/SKILL.md:50-58 documents capability prerequisites but does not document partial `analyze` results or the meaning/action for an unavailable loudness-range measurement.
+    suggestion: Either raise an actionable `AudError` when loudness-range measurement fails, or document `loudness_range_lu: null` as a valid partial `analyze` outcome and return structured per-metric availability/reason information. Do not catch unexpected exceptions under the same partial-result path.
+
+  prerequisite-failures-match-manifest
+    spec: **A missing prerequisite** fails immediately, naming what is absent and how to install it. The manifest already declares these, so the failure and the manifest must agree.
+    evidence: src/aud/SMART_TOOL.md:43-54 declares `ai-provider` satisfied by any listed API key, but does not declare the Azure endpoint prerequisite.
+    evidence: src/aud/intelligence/interface.py:203-212 rejects an Azure key without `AZURE_OPENAI_ENDPOINT`, so the manifest's stated sufficient prerequisite set does not match the runtime preflight.
+    evidence: src/aud/lib.py:1339-1350 analyzes the input (and optional reference) before checking for a provider credential or Azure endpoint.
+    evidence: src/aud/lib.py:1470-1478 decodes the entire input before the `detect fillers` call checks whether the declared `faster-whisper` extra is installed.
+    evidence: docs/CONFIGURATION.md:144-150 separately documents the Azure endpoint, confirming that it is required in addition to the manifest's listed key.
+    suggestion: Make the manifest's `ai-provider` requirement explicitly include Azure's endpoint condition (or declare it as a separate conditional requirement), with the same configuration reference. Resolve the provider and check the speech extra before decoding/analyzing input so missing prerequisites fail before capability work begins.
+
+7 adhere, 10 deviate, 0 not applicable, 0 unclear.

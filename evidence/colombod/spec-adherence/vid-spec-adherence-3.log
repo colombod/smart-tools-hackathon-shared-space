@@ -1,0 +1,67 @@
+Spec adherence of /mnt/linuxdata/workspaces/hackathon-smart-tools/amplifier-smart-tools-video:
+  adheres library-holds-every-capability: pyproject.toml:57 exposes only the `vid.cli:main` console surface; the source-tree scan found no MCP, HTTP, or other wrapper entry point.
+  adheres cli-is-thin: src/vid/cli.py:3 describes the wrapper boundary, and command bodies such as src/vid/cli.py:160 and src/vid/cli.py:308 read transport input, call one `lib` function, and write the returned plan.
+  adheres help-comes-from-library: src/vid/cli.py:31-34 prints the tool-level `--help` exactly from `lib.skill()` without concatenation or reformatting.
+  adheres genuinely-model-backed: src/vid/narrate.py:162 builds a narration prompt from the caller's prompt and indexed video segments, then obtains the script from the model via `ask`.
+  adheres ai-capabilities-identifiable: src/vid/core/skill.py:108 renders every capability with a `model-backed` or `deterministic` label, and src/vid/core/skill.py:29 explicitly describes `find`'s provider-free literal path and its meaning-based escalation.
+  adheres no-provider-failure-names-remedy: src/vid/intelligence/copilot.py:54 fails before model use when `gh` is absent and names the GitHub CLI installation URL and `gh auth login`; src/vid/intelligence/copilot.py:60 similarly names sign-in and the required Copilot subscription.
+  deviates tool-skill-content: src/vid/SMART_TOOL.md:111: The rendered skill explicitly identifies when to reach for vid, and lines 115-119 identify its non-goals.
+  adheres capability-skills-complete: src/vid/core/skill.py:13: The registry enumerates every top-level capability and records whether each is model-backed; the CLI also exposes the audio subcommands at src/vid/cli.py:226, src/vid/cli.py:235, src/vid/cli.py:245, and src/vid/cli.py:258.
+  deviates agent-skill-is-thin: skills/vid/SKILL.md:1: The shipped Agent Skill has the required `name` and `description` frontmatter, with permitted license and metadata fields.
+  adheres manifest-describes-the-tool: src/vid/SMART_TOOL.md:6: The description first identifies video-file editing/curation and then gives concrete reach-for triggers; each promised operation is represented in the capability registry, including narration at src/vid/core/skill.py:33 and verification at src/vid/core/skill.py:50.
+  adheres context-accepted-as-data: src/vid/lib.py:683 — The plan-editing library capability `trim` accepts a `Plan` structure, as do the other public plan-editing facades in this section.
+  adheres stdout-results-stderr-diagnostics: src/vid/cli.py:179 — The render command prints only the library result to stdout; the other result-producing command wrappers use the same `typer.echo` pattern.
+  deviates artifact-location-named: src/vid/index.py:50 — `VID_INDEX_DIR` is accepted verbatim, so a caller can configure a relative index directory.
+  adheres files-outside-install-tree: src/vid/index.py:53 — The default index state directory is under `XDG_STATE_HOME` or the conventional per-user `.local/state` location.
+  deviates failure-names-remedy: src/vid/color.py:109-114 raises `VidError` as `Could not read pixels: <raw stderr>` without an action the caller can take to repair the input, installation, or command.
+  deviates partial-results-are-failures: src/vid/index.py:143-158 runs the ffmpeg scene-detection command but never checks `result.returncode`; it proceeds with the initial `0.0` boundary and ffprobe duration even if scene detection failed.
+  deviates prerequisite-failures-match-manifest: src/vid/SMART_TOOL.md:22-39 declares non-optional `ffmpeg` and gives its install reference as `https://ffmpeg.org/download.html`.
+
+Deviations:
+
+  tool-skill-content
+    spec: It says what an agent would otherwise get wrong: when to reach for the tool and when not, install and prerequisites, worked invocations, sharp edges, where to read more. The Agent Skills ceiling of 500 lines applies.
+    evidence: src/vid/SMART_TOOL.md:111: The rendered skill explicitly identifies when to reach for vid, and lines 115-119 identify its non-goals.
+    evidence: src/vid/SMART_TOOL.md:127: The skill supplies copy-pasteable CLI, library, and one-shot install commands, plus a worked pipeline at lines 79-85 and deeper-documentation pointers at lines 121-125.
+    evidence: src/vid/SMART_TOOL.md:143: The prerequisite section says all deterministic capabilities need only uv, although the manifest itself says render, verify, and index require ffmpeg at lines 22-27 and speech indexing requires faster-whisper at lines 40-45.
+    evidence: src/vid/core/skill.py:87: `vid --help` renders this manifest body plus its capability index; the rendered output was 135 lines, under the 500-line ceiling. 
+    suggestion: Correct the top-level prerequisite guidance: name ffmpeg for frame-reading/rendering capabilities and the speech extra for default speech indexing, or direct the reader to `vid check` for the platform-specific install command. Do not state that every deterministic capability needs only uv.
+
+  agent-skill-is-thin
+    spec: The skill carries the manifest's name and description, the install commands, and the instruction to run `--help` and follow it. Nothing more.
+    evidence: skills/vid/SKILL.md:1: The shipped Agent Skill has the required `name` and `description` frontmatter, with permitted license and metadata fields.
+    evidence: skills/vid/SKILL.md:26: It provides install commands, and lines 49-54 correctly direct the reader to the runtime `vid --help` and per-verb help rather than duplicating their details.
+    evidence: skills/vid/SKILL.md:56: It additionally carries runtime capability/prerequisite guidance and directs use of `vid check`; this is operational tool guidance beyond the manifest description, install commands, and instruction to follow `--help` that the thin Agent Skill is limited to. 
+    suggestion: Remove the `vid check` paragraph (and any similar runtime guidance) from the shipped Agent Skill. Keep the frontmatter/summary, install commands, and the instruction to run and follow `vid --help`.
+
+  artifact-location-named
+    spec: Where a capability writes an artifact, such as a profile, document, or configuration, to a file, the result clearly identifies its location.
+    evidence: src/vid/index.py:50 — `VID_INDEX_DIR` is accepted verbatim, so a caller can configure a relative index directory.
+    evidence: src/vid/lib.py:378 — The index result reports `index_path(video)` verbatim, which remains relative when `VID_INDEX_DIR` was relative and gives no base directory.
+    evidence: src/vid/lib.py:633 — `VID_NARRATION_DIR` is likewise accepted verbatim, including a relative directory.
+    evidence: src/vid/lib.py:588 — The narration result reports the resulting track path verbatim, leaving it ambiguous when the override was relative.
+    suggestion: Resolve `VID_INDEX_DIR` and `VID_NARRATION_DIR` to absolute paths before deriving artifacts, or explicitly state their base directory in the result. This ensures every reported artifact location is independently resolvable.
+
+  failure-names-remedy
+    spec: Failures are loud and they name the remedy. A caller should never have to infer what went wrong from an empty result.
+    evidence: src/vid/color.py:109-114 raises `VidError` as `Could not read pixels: <raw stderr>` without an action the caller can take to repair the input, installation, or command.
+    evidence: src/vid/intelligence/__init__.py:25-29 turns any provider error into `The model could not answer: <error>` and reports an empty response without a remedy.
+    evidence: src/vid/cli.py:387-393 prints caught `VidError` values to stderr and exits 1, but it catches no other exception type, so direct dependency failures outside named-error paths can still escape as tracebacks.
+    suggestion: Give each media/provider failure a capability-specific next action, rather than only raw diagnostics. Add narrow translation for expected subprocess/dependency exceptions at their call sites so the CLI never exposes a traceback for an anticipated failure.
+
+  partial-results-are-failures
+    spec: **A partial result** is a failure unless the capability documents partial completion as a valid outcome, in which case the result says which parts succeeded. A capability never silently returns the portion that worked.
+    evidence: src/vid/index.py:143-158 runs the ffmpeg scene-detection command but never checks `result.returncode`; it proceeds with the initial `0.0` boundary and ffprobe duration even if scene detection failed.
+    evidence: src/vid/index.py:243-259 converts that returned boundary set into `record["shots"]` and writes the index as a successful result, with no indication that shot detection did not complete.
+    evidence: src/vid/vision.py:58-63 and src/vid/vision.py:95-107 show the intended all-or-nothing approach elsewhere: failed frame extraction raises and does not return the partial batch.
+    suggestion: Check the scene-detection subprocess return code and raise a named, actionable `VidError` before constructing or writing the index. Do not persist an index whose shots were derived only from the fallback bounds after detector failure.
+
+  prerequisite-failures-match-manifest
+    spec: **A missing prerequisite** fails immediately, naming what is absent and how to install it. The manifest already declares these, so the failure and the manifest must agree.
+    evidence: src/vid/SMART_TOOL.md:22-39 declares non-optional `ffmpeg` and gives its install reference as `https://ffmpeg.org/download.html`.
+    evidence: src/vid/color.py:109-114 invokes ffmpeg directly with no availability preflight; if it is absent, `subprocess.run` raises `FileNotFoundError` before the named error message is reached.
+    evidence: src/vid/color.py:142-161 and src/vid/color.py:165-180 show that recolor also directly invokes ffmpeg and ffprobe while the manifest says plan-building capabilities do not touch frames at src/vid/SMART_TOOL.md:24-27.
+    evidence: src/vid/intelligence/copilot.py:54-65 demonstrates the matching pattern the prerequisite failures should follow: it detects missing `gh` before work and uses the manifest install reference in its remedy.
+    suggestion: Add a shared ffmpeg/ffprobe preflight before recolor's media work and surface the manifest's ffmpeg install reference in its failure. Update the ffmpeg manifest purpose to include recolor's frame sampling, or defer recolor sampling until a documented render-time prerequisite boundary.
+
+11 adhere, 6 deviate, 0 not applicable, 0 unclear.

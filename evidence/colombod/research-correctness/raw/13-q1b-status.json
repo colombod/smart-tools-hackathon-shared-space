@@ -1,0 +1,77 @@
+{
+    "result": {
+        "artifacts": [
+            {
+                "bytes": 416,
+                "lines": 1,
+                "name": "brief.md"
+            },
+            {
+                "bytes": 3086,
+                "lines": 26,
+                "name": "report.md"
+            },
+            {
+                "bytes": 2164,
+                "lines": 69,
+                "name": "sources.json"
+            }
+        ],
+        "duration_ms": 34456,
+        "failure": null,
+        "liveness": {
+            "poll_again_in_seconds": null,
+            "state": "final",
+            "why": "the run finished with status 'complete'"
+        },
+        "next": {
+            "read": "deep-research read dr-6f447489",
+            "sources": "deep-research sources dr-6f447489"
+        },
+        "path": "/home/colombod/.local/state/amplifier-research/runs/dr-6f447489",
+        "run_id": "dr-6f447489",
+        "stage": null,
+        "stages": [
+            {
+                "duration_ms": 7000,
+                "ended_at": "2026-09-20T11:51:24Z",
+                "name": "scope",
+                "started_at": "2026-09-20T11:51:17Z",
+                "status": "complete"
+            },
+            {
+                "duration_ms": 4000,
+                "ended_at": "2026-09-20T11:51:28Z",
+                "name": "gather",
+                "started_at": "2026-09-20T11:51:24Z",
+                "status": "complete"
+            },
+            {
+                "duration_ms": 24000,
+                "ended_at": "2026-09-20T11:51:52Z",
+                "name": "synthesise",
+                "started_at": "2026-09-20T11:51:28Z",
+                "status": "complete"
+            },
+            {
+                "duration_ms": 0,
+                "ended_at": "2026-09-20T11:51:52Z",
+                "name": "report",
+                "started_at": "2026-09-20T11:51:52Z",
+                "status": "complete"
+            }
+        ],
+        "stages_complete": 4,
+        "stages_total": 4,
+        "status": "complete",
+        "tool": "deep-research",
+        "usage": {
+            "attempts": 2,
+            "attempts_discarded": 0,
+            "cost_usd": "0.054127",
+            "discarded_cost_usd": null,
+            "tokens_in": 9008,
+            "tokens_out": 2813
+        }
+    }
+}

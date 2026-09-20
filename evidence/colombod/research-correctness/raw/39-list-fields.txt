@@ -1,0 +1,4 @@
+fields per entry: ['created_at', 'path', 'query', 'run_id', 'sources', 'status', 'tool']
+{"created_at": "2026-09-20T11:55:10Z", "path": "/home/colombod/.local/state/amplifier-research/runs/fc-45813ee9", "query": "4 claim(s)", "run_id": "fc-45813ee9", "sources": 9, "status": "complete", "tool": "fact-check"}
+{"created_at": "2026-09-20T11:54:53.081764+00:00", "path": "/home/colombod/.local/state/amplifier-research/runs/fc-e62be46c", "query": "4 claim(s)", "run_id": "fc-e62be46c", "sources": null, "status": "failed", "tool": "fact-check"}
+{"created_at": "2026-09-20T11:53:57Z", "path": "/home/colombod/.local/state/amplifier-research/runs/dr-e4e83946", "query": "what is the maximum UDP message size stated in RFC 1035?", "run_id": "dr-e4e83946", "sources": null, "status": "running", "tool": "deep-research"}

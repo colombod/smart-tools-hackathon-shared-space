@@ -1,0 +1,7 @@
+status: failed | liveness: final | the run finished with status 'failed'
+failure: {
+ "code": "usage",
+ "message": "No claims file at raw/22-claims.txt.",
+ "remedy": "Point --claims-file at a file with one claim per line. Log retained at /home/colombod/.local/state/amplifier-research/runs/fc-e62be46c/detached.log.",
+ "stage": null
+}

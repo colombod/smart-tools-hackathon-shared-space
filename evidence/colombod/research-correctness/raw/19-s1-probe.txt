@@ -1,0 +1,15 @@
+=== s1 exact URL, verbose status + body ===
+HTTP/2 404 
+date: Sun, 20 Sep 2026 11:52:54 GMT
+content-type: text/plain;charset=utf-8
+content-length: 15
+set-cookie: __cf_bm=MgywhdU_1jzlAJ_GeldQ5giOXFNdwmZCzczm_ScgS.k-1789905174.8103647-1.0.1.1-axKBaxST6OfGDdJ3j_GJXHvR.xog1aZ_g1efPsu5VcuYFWdQQ7Kah8ivYpFj0fJFtaK_yVoB453dGy8vCwTWnory8iPExmsKnQlO.EJ4Ut7QHggXB9iHttYuSQjGQw11; HttpOnly; SameSite=None; Secure; Path=/; Domain=rfc-editor.org; Expires=Sun, 20 Sep 2026 12:22:54 GMT
+server: cloudflare
+cf-ray: a3e0a06e8d9a985b-LHR
+alt-svc: h3=":443"; ma=86400
+
+404 - Not found
+=== does the canonical RFC 1035 exist at rfc-editor? ===
+rfc1035.txt        -> 200 text/plain;charset=utf-8 122549
+rfc1035.pdf        -> 404 text/plain;charset=utf-8 15
+pdfrfc/rfc1035.pdf -> 404 text/plain;charset=utf-8 15

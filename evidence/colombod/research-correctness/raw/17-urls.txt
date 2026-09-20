@@ -1,0 +1,9 @@
+s1 https://www.rfc-editor.org/rfc/pdfrfc/rfc1035.txt.pdf
+s2 https://devblogs.microsoft.com/oldnewthing/20120412-00/?p=7873
+s3 https://spec.school/topics/dns/lessons/names-and-labels
+s4 https://www.freesoft.org/CIE/RFC/1035/11.htm
+s5 https://tex2e.github.io/rfc-translater/html/rfc9267.html
+s6 https://metacpan.org/release/CREIN/Regexp-Common-dns-0.00_01/view/lib/Regexp/Common/dns.pm
+s7 https://www.mhonarc.org/archive/html/spf-discuss/2004-11/msg01329.html
+s8 https://learn.microsoft.com/en-us/troubleshoot/windows-server/active-directory/naming-conventions-for-computer-domain-site-ou
+s9 https://groups.google.com/g/comp.protocols.dns.bind/c/8Lep8lp5TBU

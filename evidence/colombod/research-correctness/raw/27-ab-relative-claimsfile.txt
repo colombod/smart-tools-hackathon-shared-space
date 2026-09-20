@@ -1,0 +1,9 @@
+### A/B PROOF: same command, only --detach differs. cwd=/mnt/linuxdata/workspaces/hackathon-smart-tools/research-correctness
+
+--- A: ATTACHED, relative --claims-file, bogus --from-run (free, no model call) ---
+{"error": {"code": "run_not_found", "message": "No run 'dr-DOES-NOT-EXIST' in /home/colombod/.local/state/amplifier-research/runs.", "remedy": "Run `list` to see what is there. A run lives in the runs directory it was written to, and several callers may be pointed at different ones."}}
+exit=1
+
+--- B: DETACHED, same relative --claims-file, same bogus --from-run ---
+{"result": {"accepted": true, "affordances": [{"call": "fact_check.status('fc-e62be46c')", "command": "fact-check status fc-e62be46c", "cost_usd": "0.00", "does": "whether this run is growing, final, or abandoned -- ask this before anything else", "name": "status", "needs_credentials": false, "returns": "json"}, {"call": "fact_check.verdicts('fc-e62be46c')", "command": "fact-check verdicts fc-e62be46c", "cost_usd": "0.00", "does": "one verdict per claim, once they exist", "name": "verdicts", "needs_credentials": false, "returns": "json"}, {"call": "fact_check.read('fc-e62be46c', lines=40)", "command": "fact-check read fc-e62be46c --lines 40", "cost_usd": "0.00", "does": "a bounded slice of the narrative, once one exists", "name": "read", "needs_credentials": false, "returns": "json"}], "claim_count": 4, "detached": true, "inherited_from": "dr-DOES-NOT-EXIST", "not_yet_true": ["no claim has been assessed", "no verdict exists", "no confidence has been assessed", "the run may still fail"], "path": "/home/colombod/.local/state/amplifier-research/runs/fc-e62be46c", "pid": 3153145, "poll_again_in_seconds": 10, "run_id": "fc-e62be46c"}}
+exit=0

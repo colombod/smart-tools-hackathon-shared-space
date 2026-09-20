@@ -1,0 +1,9 @@
+FIXTURE keys : ['backend', 'counts', 'created_at', 'depth', 'duration_ms', 'failure', 'from_run', 'query', 'run_id', 'schema', 'stages', 'status', 'tally', 'tool', 'updated_at', 'usage']
+REAL RUN keys: ['backend', 'confidence', 'counts', 'created_at', 'depth', 'detached', 'duration_ms', 'failure', 'host', 'inherited_from', 'pid', 'query', 'run_id', 'schema', 'stages', 'status', 'tool', 'updated_at', 'usage']
+
+in fixture, not in real run: ['from_run', 'tally']
+in real run, not in fixture: ['confidence', 'detached', 'host', 'inherited_from', 'pid']
+
+fixture['tally'] = {'supported': 1, 'refuted': 1, 'unverifiable': 1, 'opinion': 0}
+real   ['tally'] = None
+real   ['counts'] = {'claims': 4, 'opinion': 1, 'refuted': 1, 'sources': 9, 'supported': 1, 'unverifiable': 1}

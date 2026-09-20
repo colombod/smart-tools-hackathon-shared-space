@@ -1,0 +1,14 @@
+=== error stream test 1: unknown run id (RunNotFoundError) ===
+exit=1
+STDOUT: 
+STDERR: {"error": {"code": "run_not_found", "message": "No run 'dr-nope' in /home/colombod/.local/state/amplifier-research/runs.", "remedy": "Run `list` to see what is there. A run lives in the runs directory it was written to, and several callers may be pointed at different ones."}}
+
+=== error stream test 2: usage error (no claims) ===
+exit=2
+STDOUT: 
+STDERR: {"error": {"code": "usage", "message": "No claims were given.", "remedy": "Pass --claim TEXT (repeatable) or --claims-file PATH."}}
+
+=== error stream test 3: bad backend (UsageError) ===
+exit=2
+STDOUT: 
+STDERR: {"error": {"code": "usage", "message": "There is no backend 'bogus'.", "remedy": "Backends: perplexity, agent. Set one with --backend, the config file, or RESEARCH_BACKEND."}}

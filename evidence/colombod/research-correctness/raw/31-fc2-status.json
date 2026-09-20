@@ -1,0 +1,75 @@
+{
+    "result": {
+        "artifacts": [
+            {
+                "bytes": 352,
+                "lines": 1,
+                "name": "brief.md"
+            },
+            {
+                "bytes": 2167,
+                "lines": 16,
+                "name": "report.md"
+            },
+            {
+                "bytes": 2199,
+                "lines": 70,
+                "name": "sources.json"
+            },
+            {
+                "bytes": 4600,
+                "lines": 53,
+                "name": "verdicts.json"
+            }
+        ],
+        "duration_ms": 37962,
+        "failure": null,
+        "liveness": {
+            "poll_again_in_seconds": null,
+            "state": "final",
+            "why": "the run finished with status 'complete'"
+        },
+        "next": {
+            "read": "fact-check read fc-45813ee9",
+            "sources": "fact-check sources fc-45813ee9"
+        },
+        "path": "/home/colombod/.local/state/amplifier-research/runs/fc-45813ee9",
+        "run_id": "fc-45813ee9",
+        "stage": null,
+        "stages": [
+            {
+                "duration_ms": 6000,
+                "ended_at": "2026-09-20T11:55:16Z",
+                "name": "triage",
+                "started_at": "2026-09-20T11:55:10Z",
+                "status": "complete"
+            },
+            {
+                "duration_ms": 17000,
+                "ended_at": "2026-09-20T11:55:33Z",
+                "name": "verify",
+                "started_at": "2026-09-20T11:55:16Z",
+                "status": "complete"
+            },
+            {
+                "duration_ms": 15000,
+                "ended_at": "2026-09-20T11:55:48Z",
+                "name": "compile",
+                "started_at": "2026-09-20T11:55:33Z",
+                "status": "complete"
+            }
+        ],
+        "stages_complete": 3,
+        "stages_total": 3,
+        "status": "complete",
+        "tool": "fact-check",
+        "usage": {
+            "attempts": 6,
+            "attempts_discarded": 0,
+            "cost_usd": "0.096276",
+            "discarded_cost_usd": null,
+            "tokens_in": 17222,
+            "tokens_out": 2974
+        }
+    }
+}

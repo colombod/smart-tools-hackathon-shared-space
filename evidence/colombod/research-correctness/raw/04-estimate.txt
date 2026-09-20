@@ -1,0 +1,43 @@
+=== research -h ===
+usage: deep-research research --query TEXT [--depth {low,medium,high}]
+                              [--max-sources N] [--backend NAME]
+                              [--runs-dir PATH] [--timeout-ms MS] [--inline]
+                              [--no-inline] [--no-scope] [--quiet] [--detach]
+                              [-h] [--help]
+
+Research a question and leave the evidence on disk. Model-backed: it consumes
+tokens, may answer differently on a second run, and fails saying so when no
+backend is configured rather than returning a lesser answer. Progress is
+written to stderr as it runs AND kept in the run's own event log, so a caller
+who was not watching can still reconstruct what happened.
+
+options:
+  --query TEXT
+  --depth {low,medium,high}
+  --max-sources N
+  --backend NAME
+  --runs-dir PATH
+  --timeout-ms MS
+  --inline              return the whole report in the envelope, whatever its
+                        size
+  --no-inline           always return a pointer, never the report itself
+  --no-scope            skip the question-sharpening stage. Measured: on a
+                        question that is already clear and bounded the run
+                        costs ~37% more WITH scope, so skipping it saves ~27%
+                        of the cost and ~41% of the wall-clock and changes
+                        nothing a blind judge could see -- but on a vague one
+                        it loses a blind comparison 6 for 6. Use it when you
+                        know what you are asking; leave it on when you are not
+                        sure.
+  --quiet               do not stream progress to stderr
+  --detach              return part one immediately and continue the work in
+                        the background. The response says what is NOT yet true
+                        and names `status` as the way to find out when it is.
+                        MEASURED runs have taken 57 to 784 seconds -- the
+                        upper figure is real, not a guess -- so blocking for
+                        that is a choice, not an obligation.
+  -h                    terse summary for a person: this verb's flags
+  --help                this verb explained for an agent driving it
+
+=== estimate ===
+{"result": {"backend": "perplexity", "basis": "depth=low profile", "calibration_runs": 4, "caveat": "An estimate from the request alone, calibrated against 4 real runs -- single digits, so treat the point figure as the middle of the range rather than a promise. Two runs at the same depth spanned 2.2x between themselves. A stage that fails validation is retried AND BILLED FOR EVERY ATTEMPT, which no estimate can predict: one measured run spent 63% of its money on work it discarded. The run's own run.json records what was actually spent, including attempts_discarded and discarded_cost_usd.", "claims": null, "depth": "low", "estimated_cost_usd": "0.0930", "estimated_cost_usd_range": {"high": "0.2046", "low": "0.0558"}, "estimated_seconds": 100, "estimated_sources": 15, "estimated_tokens_in": 13000, "estimated_tokens_out": 3600, "is_estimate": true, "query": "Under which open-source licence is each of these Python libraries distributed, according to its own repository or package metadata: librosa, pedalboard, essentia, matchering?", "scope": true}}

@@ -1,0 +1,103 @@
+Spec adherence of /mnt/linuxdata/workspaces/hackathon-smart-tools/amplifier-smart-tools-research/tools/deep-research:
+  deviates library-holds-every-capability: tools/deep-research/src/deep_research/__init__.py:102-109 exposes `estimate` with only `query`, `depth`, and `runs_dir`, and forwards only those inputs to the library API.
+  adheres cli-is-thin: tools/deep-research/src/deep_research/cli.py:227-251 shows each tool-specific command handler as a single call to its corresponding `deep_research` library capability.
+  deviates help-comes-from-library: tools/deep-research/src/deep_research/cli.py:108 passes `deep_research.skill` directly to the root `--help` action, and tools/deep-research/src/deep_research/__init__.py:172-195 defines that library-owned tool skill.
+  adheres genuinely-model-backed: tools/deep-research/src/deep_research/stages.py:49-57 sends a scope prompt containing the caller's query through the Reasoner stage interface.
+  adheres ai-capabilities-identifiable: tools/deep-research/src/deep_research/cli.py:160-169 labels `research` as `MODEL-BACKED, spends tokens` and says that it may vary between runs and fails when no backend is configured.
+  deviates no-provider-failure-names-remedy: tools/deep-research/src/deep_research/research.py:292-307 returns into `_detach` before the normal provider preflights at lines 327-328.
+  deviates tool-skill-content: src/deep_research/SMART_TOOL.md:44-56 — The manifest body gives useful multi-source research use guidance and explicit non-goals, but it contains no installation command or prerequisite setup instructions.
+  deviates capability-skills-complete: src/deep_research/__init__.py:112-127 and src/deep_research/cli.py:111-222 — The tool exposes the manifest, skill, config, research, and common navigation capabilities, and each rendered `<capability> --help` did produce a document.
+  not-applicable agent-skill-is-thin: skills/deep-research/SKILL.md:absent — The tool ships no Agent Skill file under `skills/`, so there is no shipped skill to assess for thinness.
+  adheres manifest-describes-the-tool: src/deep_research/SMART_TOOL.md:5-11 — The description first states the multi-source research outcome and then names discovery phrases and decision/source-finding situations; the use cases are concrete user outcomes rather than function names.
+  adheres context-accepted-as-data: src/deep_research/research.py:263: The public `research` library capability begins with a `query: str` parameter, so its material is supplied as content rather than as a path for the library to open.
+  deviates stdout-results-stderr-diagnostics: src/deep_research/cli.py:258: Caught `SmartToolError` failures are sent to `emit_error` before the non-zero exit code is returned.
+  deviates artifact-location-named: src/deep_research/research.py:337: A `RunWriter` is created before workflow stages, and `research.py:409` can then raise `NoEvidence` after the run has already been created and populated.
+  adheres files-outside-install-tree: packages/research-core/src/research_core/config.py:71: The default runs directory is derived from `$XDG_STATE_HOME` (or `~/.local/state`) and is therefore outside the installed tool and arbitrary invocation directory.
+  deviates failure-names-remedy: src/deep_research/research.py:611-622 starts detached work by directly calling the library in a child and redirects both stdout and stderr to `detached.log`, without a handler that writes a structured failure.
+  deviates partial-results-are-failures: src/deep_research/research.py:517-525 deliberately preserves material gathered before a stage failure and marks the run failed rather than returning it from `research`.
+  deviates prerequisite-failures-match-manifest: src/deep_research/SMART_TOOL.md:26-35 declares `ai-provider` satisfied by any one of five API-key variables, but its purpose does not name a provider client library as a further prerequisite.
+
+Deviations:
+
+  library-holds-every-capability
+    spec: Everything the tool can do is reachable from the library. The rule is one-directional and absolute: no capability exists only in a wrapper.
+    evidence: tools/deep-research/src/deep_research/__init__.py:102-109 exposes `estimate` with only `query`, `depth`, and `runs_dir`, and forwards only those inputs to the library API.
+    evidence: packages/research-core/src/research_core/verbs.py:80-87 implements the CLI estimate handler with additional `claims` and `scope` inputs.
+    evidence: packages/research-core/src/research_core/verbs.py:237-254 exposes those inputs as the `estimate --claims` and `estimate --no-scope` command options, so callers of `deep_research.estimate` cannot reach those command capabilities.
+    suggestion: Extend `deep_research.estimate` to accept `claims` and `scope` and forward both to `api.estimate`, keeping its public library capability congruent with the CLI.
+
+  help-comes-from-library
+    spec: What `--help` prints is a skill, the tool's on the tool and a capability's on that capability, and every skill comes from the library. The CLI prints it and adds nothing.
+    evidence: tools/deep-research/src/deep_research/cli.py:108 passes `deep_research.skill` directly to the root `--help` action, and tools/deep-research/src/deep_research/__init__.py:172-195 defines that library-owned tool skill.
+    evidence: tools/deep-research/src/deep_research/cli.py:218-222 wires every capability's `--help` from the CLI subparsers rather than from a per-capability library skill.
+    evidence: packages/research-core/src/research_core/skill.py:184-269 builds a verb skill by reading the argparse subparser description and actions, and packages/research-core/src/research_core/skill.py:303-310 installs that generated document as each subcommand's `--help` output.
+    suggestion: Expose a library-owned skill renderer for each capability, including the capability metadata it needs, and have the CLI's per-verb `--help` callbacks print that returned string unchanged instead of rendering from argparse subparsers.
+
+  no-provider-failure-names-remedy
+    spec: **A smart path with no provider configured** fails saying exactly that, and says what to configure. It does not fall back to a degraded deterministic answer, because a caller that asked for the smart path and got a lesser result without being told has been misled about what it received.
+    evidence: tools/deep-research/src/deep_research/research.py:292-307 returns into `_detach` before the normal provider preflights at lines 327-328.
+    evidence: tools/deep-research/src/deep_research/research.py:595-622 creates the run directory and starts a detached child that will run `research` later, without checking the backend or reasoner in the caller's invocation.
+    evidence: tools/deep-research/src/deep_research/research.py:657-669 returns a success-shaped `accepted: true` response and only says generically that the run may fail, rather than naming the absent provider and its remedy.
+    evidence: packages/research-core/src/research_core/engine.py:541-545 shows the normal reasoning preflight does name the missing provider credentials and says deterministic verbs still work.
+    evidence: packages/research-core/src/research_core/backends/perplexity.py:56-65 shows the normal Perplexity preflight names `PERPLEXITY_API_KEY` and the credentials-file remedy.
+    suggestion: Run both backend and reasoning-provider preflights in the parent before calling `_detach`; if either is absent, return its `no_provider` error and remedy without creating a run or child process. The child may repeat preflight defensively, but `research --detach` must not return `accepted: true` for an unconfigured smart path.
+
+  tool-skill-content
+    spec: It says what an agent would otherwise get wrong: when to reach for the tool and when not, install and prerequisites, worked invocations, sharp edges, where to read more. The Agent Skills ceiling of 500 lines applies.
+    evidence: src/deep_research/SMART_TOOL.md:44-56 — The manifest body gives useful multi-source research use guidance and explicit non-goals, but it contains no installation command or prerequisite setup instructions.
+    evidence: src/deep_research/__init__.py:149-169 — Copy-pasteable install commands exist in code, but the comment explicitly says they are deliberately absent from `--help`.
+    evidence: packages/research-core/src/research_core/skill.py:68-74 — The root-skill renderer deliberately omits acquisition instructions, so rendered `deep-research --help` cannot supply the required install guidance.
+    evidence: src/deep_research/SMART_TOOL.md:64-65 — The body claims that only `manifest` ships and that research/navigation verbs are future work, contradicting the registered capabilities.
+    evidence: src/deep_research/__init__.py:180-205 — The root rendered skill has substantive result, navigation, and worked-example content; its actual `--help` render was 146 lines, below the 500-line ceiling.
+    suggestion: Put copy-pasteable installation commands and concrete prerequisite/setup guidance in the rendered root skill, and reconcile the manifest body with the currently exposed verbs. Keep the existing examples, sharp-edge guidance, and capability-help routing.
+
+  capability-skills-complete
+    spec: That is the capability's skill, required for every capability: the same shape as the tool's, scoped to one capability, and carrying what the tool's skill leaves out: when to use it, whether it is deterministic or model-backed, every argument and what it is for, a worked invocation, the result, and the failures.
+    evidence: src/deep_research/__init__.py:112-127 and src/deep_research/cli.py:111-222 — The tool exposes the manifest, skill, config, research, and common navigation capabilities, and each rendered `<capability> --help` did produce a document.
+    evidence: packages/research-core/src/research_core/skill.py:216-253 — The shared verb renderer emits only required/optional argument names and parser help; it does not render defaults or a worked invocation.
+    evidence: packages/research-core/src/research_core/skill.py:254-274 — Every capability skill ends with the same generic JSON-envelope paragraph rather than describing that capability's result fields or its concrete failure conditions.
+    evidence: packages/research-core/src/research_core/verbs.py:145-146 and packages/research-core/src/research_core/verbs.py:195-197 — `read` defaults `--part` to `report` and `render` defaults `--format` to `markdown`, but the corresponding capability skills omit those defaults.
+    evidence: src/deep_research/research.py:263-279 — The public library `research` capability accepts `stream`, `reasoner`, `max_attempts`, and `run_id`, none of which the generated research skill documents.
+    suggestion: Give every capability skill a real invocation, explicit defaults, capability-specific result fields, and concrete non-zero/refusal conditions. Generate or maintain the argument reference from the public library signature as well as the CLI so supported library arguments cannot be omitted.
+
+  stdout-results-stderr-diagnostics
+    spec: Stdout carries the requested result, whether text or structured data. Stderr carries diagnostics such as progress messages and warnings, keeping them separate from results that callers may pipe to another command or save to a file.
+    evidence: src/deep_research/cli.py:258: Caught `SmartToolError` failures are sent to `emit_error` before the non-zero exit code is returned.
+    evidence: packages/research-core/src/research_core/envelope.py:39: `_write` serializes its document to `sys.stdout`; `emit_error` calls this same function at lines 68-71, so failure envelopes are written to stdout.
+    evidence: packages/research-core/src/research_core/writer.py:73: Live progress defaults to `sys.stderr`, and `writer.py:146` writes progress to that stream; this correctly separates normal progress but does not correct the error path.
+    evidence: packages/research-core/src/research_core/engine.py:363: Embedded-engine stdout is redirected to `sys.stderr`, preventing subprocess/engine chatter from leaking into successful result stdout.
+    suggestion: Route `emit_error` (including parser/usage errors) to stderr and retain the existing non-zero exits. Keep `emit` as the sole stdout writer for successful requested results.
+
+  artifact-location-named
+    spec: Where a capability writes an artifact, such as a profile, document, or configuration, to a file, the result clearly identifies its location.
+    evidence: src/deep_research/research.py:337: A `RunWriter` is created before workflow stages, and `research.py:409` can then raise `NoEvidence` after the run has already been created and populated.
+    evidence: src/deep_research/research.py:505: The exhausted-attempt path persists `attempts.json` and marks the run failed; `research.py:524` likewise persists other `SmartToolError` failures.
+    evidence: src/deep_research/research.py:538: Successful synchronous research results correctly carry the run directory in a `path` field, and `research.py:661` does the same for detached runs.
+    evidence: packages/research-core/src/research_core/envelope.py:68: The CLI error envelope contains only `code`, `message`, `remedy`, and optional affordances, so persisted failed-run artifacts have no returned path.
+    evidence: packages/research-core/src/research_core/api.py:150: `render --out` writes the caller-selected artifact and returns its `path` at line 156, so this surface is correctly named.
+    suggestion: When research has created a run and then fails, attach the absolute run-directory path to the library exception/result and CLI error envelope (for example, `error.artifact.path`). This should cover `NoEvidence`, exhausted attempts, and later workflow failures, rather than requiring callers to infer the configured runs directory from an affordance.
+
+  failure-names-remedy
+    spec: Failures are loud and they name the remedy. A caller should never have to infer what went wrong from an empty result.
+    evidence: src/deep_research/research.py:611-622 starts detached work by directly calling the library in a child and redirects both stdout and stderr to `detached.log`, without a handler that writes a structured failure.
+    evidence: src/deep_research/research.py:624-655 then records that child as `status: "running"` with `failure: null`; the child’s preflight occurs before `RunWriter` is constructed (src/deep_research/research.py:324-338), so a missing provider never changes that record to failed.
+    evidence: packages/research-core/src/research_core/runs.py:201-208 reports the subsequently dead child only as `abandoned` and says only that whatever reached disk is all there will be, with neither the actual error/remedy nor an action for the retained directory/log.
+    suggestion: Preflight the detached request before spawning it, and make the child catch `SmartToolError` and persist `status: failed` with its code, message, remedy, and a pointer to the retained log. Also handle spawn/setup failures by either removing the claimed directory or returning an error that names the retained path and the recovery action.
+
+  partial-results-are-failures
+    spec: **A partial result** is a failure unless the capability documents partial completion as a valid outcome, in which case the result says which parts succeeded. A capability never silently returns the portion that worked.
+    evidence: src/deep_research/research.py:517-525 deliberately preserves material gathered before a stage failure and marks the run failed rather than returning it from `research`.
+    evidence: packages/research-core/src/research_core/runs.py:479-519 renders any existing brief/report files and always appends a bibliography, so a failed run that lacks report artifacts still produces a rendered subset.
+    evidence: packages/research-core/src/research_core/api.py:137-166 wraps that rendering in an ordinary success result with no run status, failure record, or declaration of omitted artifacts.
+    evidence: src/deep_research/__init__.py:189-192 documents `render` only as reshaping a stored run; it does not document partial rendering of failed runs or a per-artifact completion shape.
+    suggestion: For failed runs, either refuse `render`/`sources` and direct the caller to `status`, or document partial navigation as valid and include `status: failed`, the failure record, and an explicit list of present and missing artifacts in every result shape.
+
+  prerequisite-failures-match-manifest
+    spec: **A missing prerequisite** fails immediately, naming what is absent and how to install it. The manifest already declares these, so the failure and the manifest must agree.
+    evidence: src/deep_research/SMART_TOOL.md:26-35 declares `ai-provider` satisfied by any one of five API-key variables, but its purpose does not name a provider client library as a further prerequisite.
+    evidence: packages/research-core/src/research_core/engine.py:503-545 makes a provider usable only when both credential and client library resolve, and its missing-prerequisite failure instructs the caller to install a library with pip.
+    evidence: packages/research-core/pyproject.toml:26-45 installs only `anthropic` in the normal agent extra; OpenAI and Gemini libraries are separate opt-in extras, so several API keys listed in the manifest do not by themselves satisfy preflight.
+    evidence: packages/research-core/src/research_core/prerequisites.py:114-123 likewise reports the missing client library as an absent `ai-provider` requirement, confirming that it is a real preflight condition.
+    suggestion: Make the `ai-provider` requirement say that a supported API credential and its matching client library are both required, and give the exact installation routes in `docs/CONFIGURATION.md`. Alternatively, install every client library implied by the manifest’s listed credential variables.
+
+6 adhere, 10 deviate, 1 not applicable, 0 unclear.

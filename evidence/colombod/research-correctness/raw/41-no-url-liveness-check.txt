@@ -1,0 +1,10 @@
+# Does any code path ever fetch/verify a source URL? (read-only grep over both tools + core)
+$ grep -rnE 'requests\.(head|get)|urlopen|httpx|http\.client|status_code|reachable|link_check|verify_url' --include=*.py <repo>/packages/research-core/src <repo>/tools/*/src
+/mnt/linuxdata/workspaces/hackathon-smart-tools/amplifier-smart-tools-research/packages/research-core/src/research_core/engine.py:643:                "Raise timeout_ms, or check the provider is reachable. A partial "
+/mnt/linuxdata/workspaces/hackathon-smart-tools/amplifier-smart-tools-research/packages/research-core/src/research_core/api.py:4:reachable from the library... The rule is one-directional and absolute: no
+/mnt/linuxdata/workspaces/hackathon-smart-tools/amplifier-smart-tools-research/tools/deep-research/src/deep_research/__init__.py:3:**The library is the tool.** Everything the CLI can do is reachable from here,
+/mnt/linuxdata/workspaces/hackathon-smart-tools/amplifier-smart-tools-research/tools/deep-research/src/deep_research/__init__.py:243:#: also being reachable here.
+/mnt/linuxdata/workspaces/hackathon-smart-tools/amplifier-smart-tools-research/tools/deep-research/src/deep_research/prompts.py:4:definition plus two guide documents, reachable only from inside an Amplifier
+/mnt/linuxdata/workspaces/hackathon-smart-tools/amplifier-smart-tools-research/tools/fact-check/src/fact_check/__init__.py:3:**The library is the tool.** Everything the CLI can do is reachable from here,
+/mnt/linuxdata/workspaces/hackathon-smart-tools/amplifier-smart-tools-research/tools/fact-check/src/fact_check/__init__.py:233:#: also being reachable here.
+(exit 0 — no matches: no URL is ever fetched or checked)

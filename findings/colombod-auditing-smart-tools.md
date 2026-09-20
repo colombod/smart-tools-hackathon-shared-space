@@ -327,6 +327,69 @@ so.
 
 ---
 
+## Round two: the same ladder on two research tools, and what step 3 means when there is nothing to render
+
+**Evidence: MEASURED** — both creator checks plus a real-spend output sweep on `deep-research`
+and `fact-check`. N=2 tools, 2 reviewer runs each, 1 correctness sweep (~$0.53 of real API
+calls). Raw reports and 42 artifacts in `evidence/colombod/`.
+
+The same ladder, applied where the deliverable is a *brief* rather than a rendered file.
+
+**The reviewer could not run at all.** `requires-python = ">=3.11"` was declared in all three
+pyprojects while `research-core[agent]` pulls a dependency needing `>=3.12` — and that extra
+is not optional, it is each tool's only dependency line. So `uv run` failed outright in both
+tool roots, which is exactly how the creator's harness stands a tool up. Three CI jobs were
+green anyway: CI runs the kit from the *spec's* checkout, so the tool's own project is never
+synced, and `uv tool install` resolves against one concrete interpreter rather than the
+declared range. **A declared version RANGE is only tested by something that resolves the
+range.** Nothing did.
+
+**Then: 6 adhere / 10 deviate, each.** A third and fourth tool at ten. The reviewer's
+sampling behaviour reproduced exactly — round two returned 6 and 5 remaining, the classes
+recurring against new sites the first run had not read.
+
+**Step 3 here is not rendering — it is asking whether the answer is sound.** It found eight
+defects, and the worst is the direct analogue of the 50× video bug:
+
+- **Nothing in either tool had ever fetched a cited source.** The brief's load-bearing
+  citation — the one it named as *why* its confidence was "high" — returned HTTP 404. It was
+  published unmarked in the brief, the sources view and the bibliography, and then underwrote
+  four "high"-confidence verdicts one hop downstream. The answer happened to be correct and
+  another citation genuinely supported it, which is the point: **nothing in the system could
+  tell the difference**, and no amount of reading the source would reveal it.
+- **`fact-check verdicts` always returned `tally: null`** in a document whose own contract
+  says the tally *is* the answer — reader keyed `tally`, writer wrote `counts`. It survived
+  342 tests because the test asserted against a **hand-written fixture** carrying two keys no
+  engine has ever written and missing five that every engine writes. That is the
+  never-hand-write-a-mock rule earned for the fourth time, in its fourth repo.
+- **A failed run under-reported its cost 13.8×** — $0.027 claimed, $0.344 burned — because the
+  discarded-cost arithmetic hangs on a value only constructed when a stage *succeeds*. The
+  field that exists to report wasted money was structurally absent from every run that wasted
+  any.
+- **Two defects that existed only under `--detach`**: a relative file path worked attached and
+  always died detached; a nonexistent run id was accepted detached and refused attached. Both
+  are the detached path skipping validation the attached path does — composition again, one
+  layer down.
+- **The repair loop fed back the wrong finding three times.** Three rejected replies all failed
+  on one unescaped quote; the feedback said "no JSON document, no prose around it", so the
+  retries added a code fence and kept the bug. $0.34 to make one mistake three times.
+
+**What the composition test found, for once, was that it works.** `fact-check --from-run`
+transferred all nine source ids and URLs byte-identical with zero dangling citations. Worth
+recording as a negative result: the seam the video tool got wrong, this one got right.
+
+**A sixth rung, learned the hard way.** The 0.10.0 release left `main` RED twice. A version
+bump here touches seven files — three pyprojects, three manifests, two generated skill files
+— and the checks that catch a half-done bump live only in CI. Same shape as the ffmpeg
+divergence: *a gate CI runs that the local loop does not*. Closed the same way, with a
+`preflight.sh` proven by reproducing the historical failure rather than asserted. So:
+
+6. **Run what CI runs, before you push, and prove your harness by making it fail on a commit
+   that already failed.** A parity harness that cannot reproduce a known divergence is
+   theatre.
+
+---
+
 ## Ledger
 
 All numbers reproducible from the linked repos.
@@ -344,6 +407,13 @@ All numbers reproducible from the linked repos.
 | `vid` composed audio chains | **10 of 12 broken** | 12 of 12 render |
 | `vid` `ty check` | ~50 diagnostics, absent from CI | clean, in CI |
 | skills over the 1024-char limit | **3 of 4** | 0 of 4 |
+| `deep-research` spec adherence | 6 adhere / **10 deviate** | 6 deviate -> closed |
+| `fact-check` spec adherence | 6 adhere / **10 deviate** | 5 deviate -> closed |
+| research tests | 295 | **363**, 0 skips, green scrubbed |
+| `uv run` in either tool root | **unresolvable** | works |
+| cited sources ever fetched | **never** | `sources --verify` |
+| `fact-check verdicts` tally | **always null** | computed from disk |
+| failed-run cost reported | **$0.027 of $0.344** | every rejected attempt |
 
 Commits: `aud` [`3f70a3a`](https://github.com/colombod/amplifier-smart-tools-audio),
 `vid` [`bfeaa13`, `08d8553`](https://github.com/colombod/amplifier-smart-tools-video),

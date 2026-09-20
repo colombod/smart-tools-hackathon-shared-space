@@ -1,0 +1,39 @@
+{
+    "result": {
+        "artifacts": [],
+        "duration_ms": null,
+        "failure": {
+            "code": "usage",
+            "message": "No claims file at raw/22-claims.txt.",
+            "remedy": "Point --claims-file at a file with one claim per line. Log retained at /home/colombod/.local/state/amplifier-research/runs/fc-55d7c403/detached.log.",
+            "stage": null
+        },
+        "liveness": {
+            "poll_again_in_seconds": null,
+            "state": "final",
+            "why": "the run finished with status 'failed'"
+        },
+        "path": "/home/colombod/.local/state/amplifier-research/runs/fc-55d7c403",
+        "run_id": "fc-55d7c403",
+        "stage": null,
+        "stages": [
+            {
+                "name": "triage",
+                "status": "not_started"
+            },
+            {
+                "name": "verify",
+                "status": "not_started"
+            },
+            {
+                "name": "compile",
+                "status": "not_started"
+            }
+        ],
+        "stages_complete": 0,
+        "stages_total": 3,
+        "status": "failed",
+        "tool": "fact-check",
+        "usage": {}
+    }
+}

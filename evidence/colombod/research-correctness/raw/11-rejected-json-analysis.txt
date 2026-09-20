@@ -1,0 +1,24 @@
+=== synthesise-01-rejected.txt  bytes=6356 lines=5 ===
+starts with: '{\n  "brief": "Repository LICENSE/README '
+ends with: 'conflict.\\n",\n  "confidence": "medium"\n}'
+json.loads: FAIL -> Expecting ',' delimiter: line 3 column 2716 (char 3690)
+   context: 'no PyPI project page, setup.py, or pyproject.toml classifier source for essentia is included in the evidence. The only "package" source given is a GitHub Packages container-image listing [s19], which is not the kind of PyPI/pip metadata the'
+
+=== synthesise-02-rejected.txt  bytes=6487 lines=7 ===
+starts with: '```json\n{\n  "brief": "Repository LICENSE'
+ends with: '[s6].\\n",\n  "confidence": "medium"\n}\n```'
+json.loads: FAIL -> Expecting value: line 1 column 1 (char 0)
+   context: '```json\n{\n  "brief": "Repository LICENSE files are confirmed for all four libraries: librosa=ISC [s1], pedalboard=GPLv3 '
+
+=== synthesise-03-rejected.txt  bytes=5210 lines=7 ===
+starts with: '```json\n{\n  "brief": "Repository LICENSE'
+ends with: 'hering.",\n  "confidence": "medium"\n}\n```'
+json.loads: FAIL -> Expecting value: line 1 column 1 (char 0)
+   context: '```json\n{\n  "brief": "Repository LICENSE files are well supported: librosa=ISC[s1][s2], pedalboard=GPLv3[s6], essentia=A'
+
+=== synthesise-02-rejected.txt : strip the ``` fence, then parse ===
+json.loads: STILL FAIL -> Expecting ',' delimiter: line 3 column 2853 (char 3431)
+
+=== synthesise-03-rejected.txt : strip the ``` fence, then parse ===
+json.loads: STILL FAIL -> Expecting ',' delimiter: line 3 column 2335 (char 2986)
+

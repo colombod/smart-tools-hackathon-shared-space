@@ -1,0 +1,18 @@
+dr-6f447489: count=9 inherited_from= None
+fc-45813ee9: count=9 inherited_from= dr-6f447489
+id->url identical across the seam: True
+  s1  same
+  s2  same
+  s3  same
+  s4  same
+  s5  same
+  s6  same
+  s7  same
+  s8  same
+  s9  same
+
+source ids cited by verdicts: ['s1', 's4']
+dangling (cited but not in the inherited set): []
+
+the 404 URL is still s1 on the fact-check side: True
+verdicts resting on s1: [(0, 'supported', 'high'), (1, 'refuted', 'high'), (2, 'unverifiable', 'high'), (3, 'opinion', 'high')]

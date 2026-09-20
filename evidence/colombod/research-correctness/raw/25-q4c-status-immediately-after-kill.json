@@ -1,0 +1,39 @@
+{
+    "result": {
+        "artifacts": [],
+        "duration_ms": null,
+        "failure": null,
+        "liveness": {
+            "poll_again_in_seconds": null,
+            "state": "abandoned",
+            "why": "the run record says 'running' but process 3135639 is gone, so nothing is going to finish it. Whatever reached disk is all there will be."
+        },
+        "path": "/home/colombod/.local/state/amplifier-research/runs/dr-e4e83946",
+        "run_id": "dr-e4e83946",
+        "stage": "scope",
+        "stages": [
+            {
+                "name": "scope",
+                "started_at": "2026-09-20T11:53:57Z",
+                "status": "running"
+            },
+            {
+                "name": "gather",
+                "status": "not_started"
+            },
+            {
+                "name": "synthesise",
+                "status": "not_started"
+            },
+            {
+                "name": "report",
+                "status": "not_started"
+            }
+        ],
+        "stages_complete": 0,
+        "stages_total": 4,
+        "status": "running",
+        "tool": "deep-research",
+        "usage": {}
+    }
+}

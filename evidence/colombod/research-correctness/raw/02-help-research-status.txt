@@ -1,0 +1,87 @@
+=== deep-research research --help ===
+---
+name: deep-research research
+description: Research a question and leave the evidence on disk: a brief plus a pointer to the full report, the numbered sources and the backend's raw replies. Model-backed: it consumes tokens, may answer differently on a second run, and fails saying so when no evidence backend or reasoning provider is configured, rather than returning a lesser answer built on nothing.
+---
+
+# deep-research research
+
+**This verb spends money and calls a model.** It may answer differently on a second run, and it fails saying so rather than returning a lesser answer when no backend is configured.
+
+## Required
+
+- `--query`: the research question
+
+## Optional
+
+- `--depth` (one of low, medium, high; default: none): how hard the run works before it reports; unset uses the configured default
+- `--max-sources` (default: none): cap how many sources gather keeps; unset means no cap
+- `--backend` (default: none): which backend acquires evidence: perplexity or agent
+- `--runs-dir` (default: none): where runs live for this invocation
+- `--timeout-ms` (default: none): wall-clock budget for the reasoning stages
+- `--inline` (default: none): return the whole report in the envelope, whatever its size
+- `--no-inline` (default: none): always return a pointer, never the report itself
+- `--no-scope` (default: True): skip the question-sharpening stage. Measured ~27% cheaper and ~41% faster on a question that is already clear and bounded, but loses a blind comparison 6 for 6 on a vague one -- leave it on when you are not sure
+- `--quiet` (default: False): do not stream progress to stderr
+- `--detach` (default: False): return part one immediately and continue the work in the background. MEASURED runs have taken 57 to 784 seconds
+
+## Worked invocation
+
+```bash
+deep-research research --query "do state-based CRDTs converge?" --depth low
+```
+
+## Result
+
+`run_id`, `status`, `brief`, `confidence` (low/medium/high -- when it says low, believe it), `source_count`, `path` (the run directory), `report_bytes`, `inline` (whether `report` came back with the envelope or was left on disk), `usage`, `next` (the exact `read`/`sources`/`render` commands to go further), `ladder` (brief/report/sources/raw, each with its REAL size in bytes), `affordances` (named next moves, each free and credential-free), and -- when a citation points at a source this run does not have -- `warnings`. With `--detach`, part one comes back instead: `accepted`, `detached`, `pid`, `not_yet_true` (what is not true yet -- read it before treating acceptance as an answer), and `poll_again_in_seconds`.
+
+## Failures
+
+- NoProviderError (exit 3): no evidence backend, or no reasoning provider, is configured. Run `check` to see what this host resolves.
+- NoEvidence (exit 1): the gather stage returned no sources -- nothing to base an answer on. The run record is kept; `status <id>` shows where it stopped.
+- SmartToolError wrapping AttemptsExhausted (exit 1): a stage was rejected `max_attempts` times in a row; every attempt is kept in the run's `attempts.json`.
+- UsageError (exit 2): an unrecognised `--backend` name.
+
+## Reading the result
+
+One JSON document on stdout. Success is `{"result": ...}`; failure is `{"error": {"code", "message", "remedy", "affordances"}}` with a non-zero exit. **A refusal carries `affordances` too** -- named next moves, each free and each needing no credential, so being refused is never a dead end. Progress and diagnostics go to stderr, never stdout.
+
+For the whole tool rather than this one verb: `deep-research --help`.
+
+=== deep-research status --help ===
+---
+name: deep-research status
+description: What a run is doing or did: its state, which stages completed, how long they took, what was spent, and -- when it failed -- where and why.
+---
+
+# deep-research status
+
+**Deterministic.** Runs with no provider configured and no credentials of any kind, costs nothing, and returns the same answer for the same input.
+
+## Required
+
+- `run_id` (positional)
+
+## Optional
+
+- `--runs-dir` (default: none): where runs live for this invocation
+
+## Worked invocation
+
+```bash
+deep-research status dr-82baa98f
+```
+
+## Result
+
+`run_id`, `tool`, `status`, `stage`, `stages_complete`, `stages_total`, `stages` (one entry per stage with timing), `usage`, `duration_ms`, `failure` (present when failed: `stage`, `code`, `message`, `remedy`), `path`, `liveness` (`state` one of `growing`/`final`/`abandoned`/`unknown`, `why`, `poll_again_in_seconds`), `artifacts` (what exists and how big), and -- when complete -- `next` naming the exact `read` and `sources` commands to go further.
+
+## Failures
+
+- RunNotFoundError (exit 1) if `run_id` is not in the runs directory.
+
+## Reading the result
+
+One JSON document on stdout. Success is `{"result": ...}`; failure is `{"error": {"code", "message", "remedy", "affordances"}}` with a non-zero exit. **A refusal carries `affordances` too** -- named next moves, each free and each needing no credential, so being refused is never a dead end. Progress and diagnostics go to stderr, never stdout.
+
+For the whole tool rather than this one verb: `deep-research --help`.

@@ -1,0 +1,9 @@
+s1  404 text/plain;charset=utf-8 15  https://www.rfc-editor.org/rfc/pdfrfc/rfc1035.txt.pdf
+s2  200 text/html; charset=UTF-8 224721  https://devblogs.microsoft.com/oldnewthing/20120412-00/?p=7873
+s3  200 text/html 1330  https://spec.school/topics/dns/lessons/names-and-labels
+s4  200 text/html 1920  https://www.freesoft.org/CIE/RFC/1035/11.htm
+s5  200 text/html; charset=utf-8 103711  https://tex2e.github.io/rfc-translater/html/rfc9267.html
+s6  402  0  https://metacpan.org/release/CREIN/Regexp-Common-dns-0.00_01/view/lib/Regexp/Common/dns.pm
+s7  403 text/html; charset=iso-8859-1 199  https://www.mhonarc.org/archive/html/spf-discuss/2004-11/msg01329.html
+s8  200 text/html 79296  https://learn.microsoft.com/en-us/troubleshoot/windows-server/active-directory/naming-conventions-for-computer-domain-site-ou
+s9  429 text/html; charset=UTF-8 142  https://groups.google.com/g/comp.protocols.dns.bind/c/8Lep8lp5TBU

@@ -1,0 +1,102 @@
+Spec adherence of /mnt/linuxdata/workspaces/hackathon-smart-tools/amplifier-smart-tools-research/tools/fact-check:
+  deviates library-holds-every-capability: src/fact_check/__init__.py:112-119 exposes `estimate` with only `claims`, `depth`, and `runs_dir`, and forwards only those inputs to the shared API.
+  adheres cli-is-thin: src/fact_check/cli.py:226-240 shows the tool-specific command handlers only map parsed arguments into one `fact_check` library call.
+  deviates help-comes-from-library: src/fact_check/cli.py:112 supplies `fact_check.skill` to the root help hook, so the root `--help` is sourced from the tool library.
+  adheres genuinely-model-backed: src/fact_check/checking.py:269-283 constructs an `AgentReasoner` with the configured provider/model and preflights it before the checking stages run.
+  adheres ai-capabilities-identifiable: src/fact_check/cli.py:165-176 advertises `check-claims` as “MODEL-BACKED, spends tokens” and states that it consumes tokens and requires a configured provider.
+  deviates no-provider-failure-names-remedy: src/fact_check/checking.py:255-267 returns `_detach(...)` for `--detach` before the `AgentReasoner` is constructed and before `thinker.preflight()` is reached.
+  deviates tool-skill-content: src/fact_check/SMART_TOOL.md:44-60: The manifest body says the tool is for checking supplied claims and explicitly excludes claim finding and document-wide truth ratings.
+  deviates capability-skills-complete: src/fact_check/__init__.py:122-138: The library declares twelve callable capabilities, and src/fact_check/__init__.py:276 adds the thirteenth `skill` capability; each was checked with its `--help`.
+  not-applicable agent-skill-is-thin: skills/fact-check/SKILL.md:0: The expected shipped Agent Skill path is absent; the tool has no `skills/` directory and no non-virtualenv `SKILL.md` file.
+  adheres manifest-describes-the-tool: src/fact_check/SMART_TOOL.md:5-11: The description first states that the tool checks asserted claims against evidence, then gives natural-language reach-for and do-not-use cases; the use cases are concrete user outcomes.
+  adheres context-accepted-as-data: src/fact_check/checking.py:53: `read_claims` accepts `claim` as a list of strings, so library callers can provide claim content directly.
+  deviates stdout-results-stderr-diagnostics: src/fact_check/cli.py:248: Handled `SmartToolError` failures call `emit_error` before returning the non-zero error exit code.
+  deviates artifact-location-named: packages/research-core/src/research_core/api.py:149: `render(..., out=...)` creates the parent directory selected by the caller.
+  adheres files-outside-install-tree: packages/research-core/src/research_core/config.py:71: The default runs directory is built under `$XDG_STATE_HOME` or `~/.local/state`, not the install or invocation directory.
+  deviates failure-names-remedy: src/fact_check/checking.py:418-430 records a corrective remedy (raise `max_attempts` or rerun with fewer claims) for an uncheckable claim, but rethrows a new `SmartToolError` whose remedy is only `See verdicts.json for what was checked.`
+  deviates partial-results-are-failures: src/fact_check/checking.py:376-384 writes incremental `verdicts.json` artifacts with `complete: false` until every claim has been verified.
+  deviates prerequisite-failures-match-manifest: src/fact_check/SMART_TOOL.md:26-35 declares `ai-provider` as satisfied by any listed API key and directs installation to `docs/CONFIGURATION.md`.
+
+Deviations:
+
+  library-holds-every-capability
+    spec: Everything the tool can do is reachable from the library. The rule is one-directional and absolute: no capability exists only in a wrapper.
+    evidence: src/fact_check/__init__.py:112-119 exposes `estimate` with only `claims`, `depth`, and `runs_dir`, and forwards only those inputs to the shared API.
+    evidence: packages/research-core/src/research_core/verbs.py:80-87 has the CLI handler forward `query` and `scope` as well as the shared inputs to `api.estimate`.
+    evidence: packages/research-core/src/research_core/verbs.py:237-254 registers `estimate --query` and `estimate --no-scope`, so callers of the CLI can select behavior unavailable through `fact_check.estimate`.
+    evidence: packages/research-core/src/research_core/api.py:178-199 accepts `query` and `scope`, passes `scope` to `estimate_run`, and returns `query`, establishing that these are result-affecting inputs rather than output formatting.
+    suggestion: Add `query` and `scope` to `fact_check.estimate` and forward them to `api.estimate`, matching the CLI capability. Alternatively, remove those CLI options if they are not intended to be part of fact-check's estimate capability.
+
+  help-comes-from-library
+    spec: What `--help` prints is a skill, the tool's on the tool and a capability's on that capability, and every skill comes from the library. The CLI prints it and adds nothing.
+    evidence: src/fact_check/cli.py:112 supplies `fact_check.skill` to the root help hook, so the root `--help` is sourced from the tool library.
+    evidence: src/fact_check/cli.py:115-205 defines the manifest, skill, config, and check-claims capability descriptions and flag-help text inside the CLI parser.
+    evidence: src/fact_check/cli.py:208-212 post-processes the CLI subparsers with `wire_verb_help`, rather than invoking a fact-check library capability-skill function.
+    evidence: packages/research-core/src/research_core/skill.py:203-206 renders each verb skill from `subparser.description`, and packages/research-core/src/research_core/skill.py:239-248 derives its argument sections from the parser actions; both inputs are assembled by the CLI.
+    evidence: src/fact_check/__init__.py:125-158 exposes the capability callables and public library API but no per-capability skill or capability-help renderer for the CLI to print unchanged.
+    suggestion: Move each capability's skill document, or the metadata and renderer that produce it, behind the fact-check library (for example, `capability_skill(name)`). Have each `<capability> --help` callback print that returned string unchanged; keep `-h` as argparse's terse generated summary.
+
+  no-provider-failure-names-remedy
+    spec: **A smart path with no provider configured** fails saying exactly that, and says what to configure. It does not fall back to a degraded deterministic answer, because a caller that asked for the smart path and got a lesser result without being told has been misled about what it received.
+    evidence: src/fact_check/checking.py:255-267 returns `_detach(...)` for `--detach` before the `AgentReasoner` is constructed and before `thinker.preflight()` is reached.
+    evidence: src/fact_check/checking.py:269-283 constructs the provider-backed reasoner and invokes `thinker.preflight()` only after the detach early return, so an unconfigured detached request is accepted instead of failing at invocation time.
+    evidence: ../../packages/research-core/src/research_core/engine.py:541-545 shows that the normal preflight path correctly raises `NoProviderError` naming the missing provider credentials and client library.
+    evidence: ../../packages/research-core/src/research_core/errors.py:90-98 defines `NoProviderError` as the exit-3 no-provider failure that must occur before a prompt is built, but the detached path bypasses it for the caller.
+    suggestion: Preflight the provider before accepting or spawning `--detach` work, so an unconfigured `check-claims --detach` returns the same `no_provider` error and credential remedy as the blocking smart path. Do not create a detached run or return an acceptance receipt until that preflight succeeds.
+
+  tool-skill-content
+    spec: It says what an agent would otherwise get wrong: when to reach for the tool and when not, install and prerequisites, worked invocations, sharp edges, where to read more. The Agent Skills ceiling of 500 lines applies.
+    evidence: src/fact_check/SMART_TOOL.md:44-60: The manifest body says the tool is for checking supplied claims and explicitly excludes claim finding and document-wide truth ratings.
+    evidence: src/fact_check/__init__.py:161-181: Copy-pasteable CLI, library, and one-off installation commands exist, but the source explicitly says they are deliberately absent from `--help`.
+    evidence: src/fact_check/__init__.py:192-273: The rendered tool skill supplies the verb table, sharp-edge guidance, deeper per-verb help pointers, and two worked invocations.
+    evidence: src/fact_check/SMART_TOOL.md:64-68: The manifest body incorrectly says that only `manifest` ships, although the registered capability set exposes the full operational surface.
+    suggestion: Put at least one copy-pasteable install command and the prerequisite setup path in the rendered tool skill, then remove or correct the stale statement that only `manifest` ships. Keep the existing use/non-use guidance and worked invocations.
+
+  capability-skills-complete
+    spec: That is the capability's skill, required for every capability: the same shape as the tool's, scoped to one capability, and carrying what the tool's skill leaves out: when to use it, whether it is deterministic or model-backed, every argument and what it is for, a worked invocation, the result, and the failures.
+    evidence: src/fact_check/__init__.py:122-138: The library declares twelve callable capabilities, and src/fact_check/__init__.py:276 adds the thirteenth `skill` capability; each was checked with its `--help`.
+    evidence: packages/research-core/src/research_core/skill.py:203-269: The shared renderer creates a name, description, determinism statement, argument lists, and a generic JSON-envelope section, but has no worked-invocation or capability-specific failure section.
+    evidence: packages/research-core/src/research_core/skill.py:228-248: Argument rendering uses only an action's help text and does not render defaults.
+    evidence: packages/research-core/src/research_core/verbs.py:158-160: `read` accepts `--part` with the actual default `report`, which its rendered capability skill does not state.
+    evidence: packages/research-core/src/research_core/verbs.py:209-212: `render` accepts `--format` with the actual default `markdown`, which its rendered capability skill does not state.
+    evidence: src/fact_check/checking.py:242-252: `check-claims` has specific no-claims and no-evidence failures, while its capability skill gives only the generic error envelope.
+    suggestion: Expand every capability's `--help` to include a runnable invocation, its result fields/text, and the concrete non-zero/refusal cases; render each argument's actual default as well. Ensure this covers all thirteen callable capabilities, including `skill`, rather than relying on the shared generic envelope.
+
+  stdout-results-stderr-diagnostics
+    spec: Stdout carries the requested result, whether text or structured data. Stderr carries diagnostics such as progress messages and warnings, keeping them separate from results that callers may pipe to another command or save to a file.
+    evidence: src/fact_check/cli.py:248: Handled `SmartToolError` failures call `emit_error` before returning the non-zero error exit code.
+    evidence: packages/research-core/src/research_core/envelope.py:71: `emit_error` sends the error envelope through `_write`.
+    evidence: packages/research-core/src/research_core/envelope.py:39: `_write` serializes every supplied document to `sys.stdout`, so failure messages are captured by stdout redirection as though they were results.
+    evidence: packages/research-core/src/research_core/writer.py:141: Progress event records are streamed through the writer's stderr stream rather than stdout.
+    suggestion: Make `emit_error` serialize the failure envelope to stderr while preserving the non-zero exit code. Keep `emit` as the sole stdout result path.
+
+  artifact-location-named
+    spec: Where a capability writes an artifact, such as a profile, document, or configuration, to a file, the result clearly identifies its location.
+    evidence: packages/research-core/src/research_core/api.py:149: `render(..., out=...)` creates the parent directory selected by the caller.
+    evidence: packages/research-core/src/research_core/api.py:150: `render` writes the rendered artifact to that path.
+    evidence: packages/research-core/src/research_core/api.py:156: The render result returns `str(path)` without resolving it, so a relative `--out` is reported with no stated base.
+    evidence: src/fact_check/checking.py:453: A completed check similarly returns `str(writer.path)`, which remains relative when the caller supplies a relative `runs_dir`.
+    suggestion: Resolve artifact paths to absolute paths before writing and returning them, or return the relative path together with an explicit absolute base directory. Apply the same convention to `render`, completed checks, and detached checks.
+
+  failure-names-remedy
+    spec: Failures are loud and they name the remedy. A caller should never have to infer what went wrong from an empty result.
+    evidence: src/fact_check/checking.py:418-430 records a corrective remedy (raise `max_attempts` or rerun with fewer claims) for an uncheckable claim, but rethrows a new `SmartToolError` whose remedy is only `See verdicts.json for what was checked.`
+    evidence: src/fact_check/cli.py:243-256 emits the rethrown error envelope and returns its non-zero exit code, so the caller receives the non-remedial replacement rather than the persisted corrective remedy.
+    suggestion: Preserve the corrective `writer.fail` remedy in the rethrown `SmartToolError`, including the run/artifact path or a command to inspect it. The CLI error should tell the caller how to retry or adjust the request, not only where to review partial artifacts.
+
+  partial-results-are-failures
+    spec: **A partial result** is a failure unless the capability documents partial completion as a valid outcome, in which case the result says which parts succeeded. A capability never silently returns the portion that worked.
+    evidence: src/fact_check/checking.py:376-384 writes incremental `verdicts.json` artifacts with `complete: false` until every claim has been verified.
+    evidence: ../../packages/research-core/src/research_core/runs.py:426-447 reads that artifact but returns only the accumulated verdicts, count, and tally; it drops the artifact's `complete` state and does not identify missing claim indexes.
+    evidence: contracts/cli.v1.md:68-90 documents the successful result as `status: complete` and does not document a partial `verdicts` outcome.
+    suggestion: Either refuse `verdicts` for an incomplete run, or document partial completion and return explicit completeness plus expected and missing claim indexes alongside the completed verdicts. This must survive filtering so callers cannot mistake a partial filtered view for all completed work.
+
+  prerequisite-failures-match-manifest
+    spec: **A missing prerequisite** fails immediately, naming what is absent and how to install it. The manifest already declares these, so the failure and the manifest must agree.
+    evidence: src/fact_check/SMART_TOOL.md:26-35 declares `ai-provider` as satisfied by any listed API key and directs installation to `docs/CONFIGURATION.md`.
+    evidence: ../../packages/research-core/src/research_core/engine.py:503-512 defines an available provider as requiring both a resolvable credential and an installed provider client library.
+    evidence: ../../packages/research-core/src/research_core/engine.py:529-546 makes preflight fail when credentials exist but the client library is absent, with a separate `pip install` remedy not reflected by the manifest's declared condition or install reference.
+    evidence: docs/CONFIGURATION.md:114-150 documents credential locations and API-key setup, which is the manifest's install target, but not the provider-client-library installation that preflight requires.
+    suggestion: Make the `ai-provider` requirement describe the required provider client library as well as the credential, and update its install reference and the preflight remedy to the same configuration/install instructions. Also remove or correct the optional Perplexity entry if it is not a prerequisite of any fact-check capability rather than of the separate evidence-producing tool.
+
+6 adhere, 10 deviate, 1 not applicable, 0 unclear.

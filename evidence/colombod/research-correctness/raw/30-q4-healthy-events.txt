@@ -1,0 +1,20 @@
+2026-09-20T11:51:17Z run {'backend': 'perplexity', 'depth': 'low', 'query': 'What are the maximum lengths, in octets, of a single DNS label and of a complete domain name, as stated in RFC 1035?', 'run_id': 'dr-6f447489', 'status': 'started'}
+2026-09-20T11:51:17Z stage {'index': 1, 'of': 4, 'run_id': 'dr-6f447489', 'stage': 'scope', 'status': 'started'}
+2026-09-20T11:51:24Z usage {'cost_usd': '0.01137', 'run_id': 'dr-6f447489', 'tokens_in': 1260, 'tokens_out': 506}
+2026-09-20T11:51:24Z usage {'cost_usd': None, 'run_id': 'dr-6f447489', 'tokens_in': 0, 'tokens_out': 0}
+2026-09-20T11:51:24Z stage_attempt {'accepted': True, 'attempt': 1, 'run_id': 'dr-6f447489', 'stage': 'scope'}
+2026-09-20T11:51:24Z usage {'attempts': 1, 'attempts_discarded': 0, 'cost_usd': '0.01137', 'discarded_cost_usd': None, 'run_id': 'dr-6f447489', 'tokens_in': 1260, 'tokens_out': 506}
+2026-09-20T11:51:24Z stage {'attempts': 1, 'duration_ms': 7000, 'index': 1, 'of': 4, 'run_id': 'dr-6f447489', 'scoped': True, 'stage': 'scope', 'status': 'complete'}
+2026-09-20T11:51:24Z stage {'index': 2, 'of': 4, 'run_id': 'dr-6f447489', 'stage': 'gather', 'status': 'started'}
+2026-09-20T11:51:28Z usage {'attempts': 1, 'attempts_discarded': 0, 'cost_usd': '0.01474', 'discarded_cost_usd': None, 'run_id': 'dr-6f447489', 'tokens_in': 6669, 'tokens_out': 655}
+2026-09-20T11:51:28Z tool {'cost_usd': '0.0025', 'invocations': 1, 'name': 'search_web', 'reported_by': 'backend', 'run_id': 'dr-6f447489', 'status': 'complete'}
+2026-09-20T11:51:28Z stage {'calls': {'search_web': {'cost_usd': '0.0025', 'invocations': 1}}, 'duration_ms': 4000, 'index': 2, 'of': 4, 'run_id': 'dr-6f447489', 'sources': 9, 'stage': 'gather', 'status': 'complete'}
+2026-09-20T11:51:28Z stage {'index': 3, 'of': 4, 'run_id': 'dr-6f447489', 'stage': 'synthesise', 'status': 'started'}
+2026-09-20T11:51:52Z usage {'cost_usd': '0.039387', 'run_id': 'dr-6f447489', 'tokens_in': 2339, 'tokens_out': 2158}
+2026-09-20T11:51:52Z usage {'cost_usd': None, 'run_id': 'dr-6f447489', 'tokens_in': 0, 'tokens_out': 0}
+2026-09-20T11:51:52Z stage_attempt {'accepted': True, 'attempt': 1, 'run_id': 'dr-6f447489', 'stage': 'synthesise'}
+2026-09-20T11:51:52Z usage {'attempts': 2, 'attempts_discarded': 0, 'cost_usd': '0.054127', 'discarded_cost_usd': None, 'run_id': 'dr-6f447489', 'tokens_in': 9008, 'tokens_out': 2813}
+2026-09-20T11:51:52Z stage {'attempts': 1, 'duration_ms': 24000, 'index': 3, 'of': 4, 'run_id': 'dr-6f447489', 'stage': 'synthesise', 'status': 'complete', 'synthesised': True}
+2026-09-20T11:51:52Z stage {'index': 4, 'of': 4, 'run_id': 'dr-6f447489', 'stage': 'report', 'status': 'started'}
+2026-09-20T11:51:52Z stage {'duration_ms': 0, 'index': 4, 'of': 4, 'run_id': 'dr-6f447489', 'stage': 'report', 'status': 'complete'}
+2026-09-20T11:51:52Z run {'duration_ms': 34456, 'run_id': 'dr-6f447489', 'status': 'complete'}

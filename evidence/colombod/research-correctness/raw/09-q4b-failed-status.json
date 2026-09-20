@@ -1,0 +1,55 @@
+{
+    "result": {
+        "artifacts": [],
+        "duration_ms": 8186,
+        "failure": {
+            "code": "backend_error",
+            "message": "The Perplexity backend failed: AuthenticationError: Error code: 401 - {'error': {'message': 'Invalid API key provided. You can find your API key at https://console.perplexity.ai.', 'type': 'invalid_api_key', 'code': 401}}",
+            "remedy": "Check the service status and the credential, then run again. A run that failed keeps whatever it gathered before failing.",
+            "stage": "gather"
+        },
+        "liveness": {
+            "poll_again_in_seconds": null,
+            "state": "final",
+            "why": "the run finished with status 'failed'"
+        },
+        "path": "/home/colombod/.local/state/amplifier-research/runs/dr-4aee4213",
+        "run_id": "dr-4aee4213",
+        "stage": "gather",
+        "stages": [
+            {
+                "duration_ms": 8000,
+                "ended_at": "2026-09-20T11:46:50Z",
+                "name": "scope",
+                "started_at": "2026-09-20T11:46:42Z",
+                "status": "complete"
+            },
+            {
+                "ended_at": "2026-09-20T11:46:50Z",
+                "name": "gather",
+                "started_at": "2026-09-20T11:46:50Z",
+                "status": "failed"
+            },
+            {
+                "name": "synthesise",
+                "status": "not_started"
+            },
+            {
+                "name": "report",
+                "status": "not_started"
+            }
+        ],
+        "stages_complete": 1,
+        "stages_total": 4,
+        "status": "failed",
+        "tool": "deep-research",
+        "usage": {
+            "attempts": 1,
+            "attempts_discarded": 0,
+            "cost_usd": "0.012381",
+            "discarded_cost_usd": null,
+            "tokens_in": 1242,
+            "tokens_out": 577
+        }
+    }
+}

@@ -1,0 +1,61 @@
+Spec adherence of /mnt/linuxdata/workspaces/hackathon-smart-tools/amplifier-smart-tools-research/tools/fact-check:
+  adheres library-holds-every-capability: pyproject.toml:17-18 declares only the `fact-check` CLI entry point, and the source inventory contains no MCP, HTTP, or other shipped service wrapper.
+  adheres cli-is-thin: src/fact_check/cli.py:190-302 limits parser construction to argument definitions, help wiring, and registration of shared verbs.
+  deviates help-comes-from-library: src/fact_check/cli.py:42-117 defines the complete `CapabilitySkill` prose and argument metadata for `check-claims` in the CLI module rather than in the fact-check library.
+  adheres genuinely-model-backed: src/fact_check/checking.py:323-338: `check_claims` constructs an `AgentReasoner` with configured provider/model settings and preflights it before beginning the smart path.
+  adheres ai-capabilities-identifiable: src/fact_check/SMART_TOOL.md:69-72: the skill explicitly lists the deterministic capabilities and identifies `check-claims` as model-backed, token-consuming, and potentially variable between runs.
+  adheres no-provider-failure-names-remedy: src/fact_check/checking.py:323-345: the model-backed path creates its reasoner and calls `preflight()` before detaching, creating a run, or making model contact, so an unconfigured request is not accepted or downgraded.
+  deviates tool-skill-content: src/fact_check/SMART_TOOL.md:49-65: The manifest body explains the tool's strengths, non-goals, and the important distinction between an `unverifiable` verdict and failure.
+  deviates capability-skills-complete: src/fact_check/__init__.py:132-145: The library exposes the deterministic navigation capabilities plus `check-claims`, `classify`, and `estimate`; the CLI also exposes the `skill` capability.
+  deviates agent-skill-is-thin: src/fact_check/__init__.py:168-188: The tool provides installation instructions for the dynamically generated installed `SKILL.md`, rather than a static `skills/fact-check/SKILL.md`.
+  adheres manifest-describes-the-tool: src/fact_check/SMART_TOOL.md:5-6: The description first states that the tool checks asserted claims against evidence and returns claim-level verdicts, then gives recognizable situations in which to reach for it and explicit non-use cases.
+  adheres context-accepted-as-data: src/fact_check/checking.py:53-68: `read_claims` accepts `claim` as a list of strings and only additionally supports reading `claims_file`.
+  adheres stdout-results-stderr-diagnostics: src/fact_check/cli.py:331-348: The CLI sends successful handler payloads only through `emit` and routes both known and unexpected failures through `emit_error`.
+  adheres artifact-location-named: src/fact_check/checking.py:535-554: A completed `check_claims` result includes an absolute `path` to the run directory containing its written artifacts.
+  adheres files-outside-install-tree: docs/CONFIGURATION.md:38-50: Documentation names `runs_dir` and `engine_home` as the only write locations, with the run store defaulting to the per-user XDG state directory and per-turn directories inside `engine_home`.
+  adheres failure-names-remedy: src/fact_check/cli.py:331-346 catches every SmartToolError, emits its code/message/remedy, and converts unexpected exceptions into an error envelope with a corrective action and non-zero failure exit.
+  deviates partial-results-are-failures: src/fact_check/checking.py:448-460 persists verdicts after each successful claim and explicitly writes `complete: false` until all claims have been verified.
+  adheres prerequisite-failures-match-manifest: src/fact_check/SMART_TOOL.md:15-40 declares the two environment prerequisites (`perplexity` and `ai-provider`), gives each a purpose, marks each optional with a documented reduced form, and supplies the same installation reference.
+
+Deviations:
+
+  help-comes-from-library
+    spec: What `--help` prints is a skill, the tool's on the tool and a capability's on that capability, and every skill comes from the library. The CLI prints it and adds nothing.
+    evidence: src/fact_check/cli.py:42-117 defines the complete `CapabilitySkill` prose and argument metadata for `check-claims` in the CLI module rather than in the fact-check library.
+    evidence: src/fact_check/cli.py:294 attaches that CLI-defined object as `_capability_skill`, and lines 298-300 wire it into the verb help path.
+    evidence: ../../packages/research-core/src/research_core/skill.py:504-511 reads `_capability_skill` and installs it as the source for each verb's `--help`; lines 455-460 otherwise render help from the argparse subparser.
+    evidence: src/fact_check/cli.py:203-251 creates `manifest`, `skill`, and `config` subparsers without capability-skill metadata, so their `--help` takes the subparser-derived fallback rather than library-owned skill data.
+    evidence: src/fact_check/__init__.py:191-289 provides a library-owned whole-tool `skill()` but exposes no per-capability skills for `check-claims`, `manifest`, `skill`, or `config`.
+    suggestion: Move the `check-claims` CapabilitySkill and add capability-skill metadata for `manifest`, `skill`, and `config` into `fact_check`'s public library surface. Have the CLI obtain those objects from the library before wiring `--help`, so every capability document has the library as its sole source.
+
+  tool-skill-content
+    spec: It says what an agent would otherwise get wrong: when to reach for the tool and when not, install and prerequisites, worked invocations, sharp edges, where to read more. The Agent Skills ceiling of 500 lines applies.
+    evidence: src/fact_check/SMART_TOOL.md:49-65: The manifest body explains the tool's strengths, non-goals, and the important distinction between an `unverifiable` verdict and failure.
+    evidence: src/fact_check/SMART_TOOL.md:67-76: The body identifies deterministic versus model-backed paths and routes detailed operational guidance to each verb's `--help`.
+    evidence: src/fact_check/__init__.py:168-188: Copy-pasteable installation commands exist, but the source explicitly says they are deliberately absent from `--help`; the rendered tool skill was 119 lines and contained no install command.
+    evidence: src/fact_check/SMART_TOOL.md:15-40: The manifest names the optional Perplexity and reasoning-provider prerequisites and links their configuration documentation.
+    suggestion: Add a concise **Install and prerequisites** section to the manifest body so `fact-check --help` includes a copy-pasteable installation command and the required credential/provider setup. Keep the existing per-verb routing for operational detail.
+
+  capability-skills-complete
+    spec: That is the capability's skill, required for every capability: the same shape as the tool's, scoped to one capability, and carrying what the tool's skill leaves out: when to use it, whether it is deterministic or model-backed, every argument and what it is for, a worked invocation, the result, and the failures.
+    evidence: src/fact_check/__init__.py:132-145: The library exposes the deterministic navigation capabilities plus `check-claims`, `classify`, and `estimate`; the CLI also exposes the `skill` capability.
+    evidence: src/fact_check/cli.py:42-117: The `check-claims` capability skill supplies kind, CLI arguments, invocation, result fields, and failures, but its argument list ends at `--detach`.
+    evidence: src/fact_check/checking.py:285-300: The public `check_claims` library capability accepts `max_attempts: int | None = None`.
+    evidence: src/fact_check/cli.py:36-41: The implementation explicitly identifies `max_attempts` as a real tunable and intentionally excludes it from the capability skill despite its library signature.
+    suggestion: Document `max_attempts` in the `check-claims` capability skill with its purpose and default, or remove it from the public capability signature if it is not supported for callers. Ensure capability-skill completeness tests compare against all public library parameters, not only CLI-spelled ones.
+
+  agent-skill-is-thin
+    spec: The skill carries the manifest's name and description, the install commands, and the instruction to run `--help` and follow it. Nothing more.
+    evidence: src/fact_check/__init__.py:168-188: The tool provides installation instructions for the dynamically generated installed `SKILL.md`, rather than a static `skills/fact-check/SKILL.md`.
+    evidence: src/fact_check/__init__.py:191-201: The implementation distinguishes the full runtime skill from the installed pointer skill, identifying `pointer_skill()` as the installed `SKILL.md` for readers without the binary.
+    evidence: src/fact_check/__init__.py:205-280: The generated skill machinery carries verb descriptions, result behavior, navigation guidance, timing estimates, and worked invocations beyond a thin install-and-help pointer.
+    suggestion: Make the generated installed Agent Skill only its frontmatter/brief summary, installation commands, and a directive to run and follow `fact-check --help`. Remove duplicated prerequisite/setup and staying-current workflows as well as all runtime contract detail.
+
+  partial-results-are-failures
+    spec: **A partial result** is a failure unless the capability documents partial completion as a valid outcome, in which case the result says which parts succeeded. A capability never silently returns the portion that worked.
+    evidence: src/fact_check/checking.py:448-460 persists verdicts after each successful claim and explicitly writes `complete: false` until all claims have been verified.
+    evidence: packages/research-core/src/research_core/runs.py:426-447 reads that partial artifact but drops its `complete` field and returns only the successful verdict entries, with no run status or expected claim count.
+    evidence: contracts/cli.v1.md:61-63 documents that verdicts land incrementally, but it does not document `verdicts` as a partial-completion result or define a per-claim/overall completion status for callers.
+    suggestion: Make `verdicts` refuse incomplete runs, or return explicit `complete: false`, run status, expected claim count, and the identities/statuses of unverified claims. If partial verdict retrieval remains supported, document that outcome and its result shape in the capability contract.
+
+12 adhere, 5 deviate, 0 not applicable, 0 unclear.

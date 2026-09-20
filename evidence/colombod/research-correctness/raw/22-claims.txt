@@ -1,0 +1,4 @@
+RFC 1035 limits a single DNS label to 63 octets or less.
+RFC 1035 limits a complete domain name to 512 octets or less.
+The authors of RFC 1035 picked the 63-octet label limit because of a memory constraint in the PDP-10 machines at ISI in 1987.
+The 255-octet domain name limit in RFC 1035 is too small for modern applications and ought to be raised.

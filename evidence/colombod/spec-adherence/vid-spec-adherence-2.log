@@ -1,0 +1,57 @@
+Spec adherence of /mnt/linuxdata/workspaces/hackathon-smart-tools/amplifier-smart-tools-video:
+  adheres library-holds-every-capability: pyproject.toml:56-57 declares only the `vid.cli:main` console surface; no MCP, HTTP, or other shipped wrapper is configured.
+  adheres cli-is-thin: src/vid/cli.py:120-132 shows the normal command shape: read the plan transport value, call the corresponding library function, and write the returned plan.
+  adheres help-comes-from-library: src/vid/cli.py:31-34 echoes the top-level help string returned by `lib.skill()` without concatenating or reformatting it.
+  adheres genuinely-model-backed: src/vid/narrate.py:151 builds a narration prompt from the caller's prompt and indexed video segments, sends it through `ask`, and turns the model's numbered prose into the returned script.
+  adheres ai-capabilities-identifiable: src/vid/core/skill.py:27 identifies `find` as deterministic for its literal tier while explicitly stating that semantic descriptions escalate to a provider.
+  adheres no-provider-failure-names-remedy: src/vid/intelligence/copilot.py:36 preflights the GitHub CLI token and its failures tell the caller to install `gh` and sign in with `gh auth login`, including the need for Copilot access.
+  adheres tool-skill-content: src/vid/SMART_TOOL.md:73-109: The manifest body gives a worked, five-verb pipeline and explains the single-pass plan/pipe contract and the costly approach to avoid.
+  deviates capability-skills-complete: src/vid/core/skill.py:13-55: The authoritative registry exposes 20 capabilities, and the CLI additionally exposes four audio subcommands, all of whose rendered `--help` documents were checked.
+  adheres agent-skill-is-thin: skills/vid/SKILL.md:1-18: The shipped Agent Skill has the required `name` and discovery-oriented `description` frontmatter, plus permitted license and repository metadata.
+  adheres manifest-describes-the-tool: src/vid/SMART_TOOL.md:5-6: The description first identifies the video-editing scope, then gives concrete routing language and search terms, followed by an explicit non-goal boundary.
+  adheres context-accepted-as-data: src/vid/lib.py:45: `render` accepts a structured `Plan` plus a caller-selected output value, rather than loading a plan from a path itself.
+  adheres stdout-results-stderr-diagnostics: src/vid/cli.py:170-179: `render` obtains the library result and emits only that result with `typer.echo`.
+  deviates artifact-location-named: src/vid/cli.py:170-179: `render` accepts a caller-supplied output path and prints the library result, but does not establish a base for a relative argument.
+  adheres files-outside-install-tree: src/vid/index.py:42-49: Index state uses a caller-configured directory or the XDG state directory, and `build` writes the index under that location.
+  deviates failure-names-remedy: src/vid/index.py:99-103: `load()` deserializes an existing index with `json.loads(path.read_text(...))` without translating malformed JSON into a `VidError` that explains how to repair or rebuild the index.
+  adheres partial-results-are-failures: src/vid/vision.py:55-108: frame extraction accumulates per-shot failures and raises instead of returning the frames that succeeded.
+  deviates prerequisite-failures-match-manifest: src/vid/SMART_TOOL.md:21-65: the manifest declares ffmpeg, faster-whisper, piper-tts, gh, and a GitHub Copilot subscription with install references and optionality.
+
+Deviations:
+
+  capability-skills-complete
+    spec: That is the capability's skill, required for every capability: the same shape as the tool's, scoped to one capability, and carrying what the tool's skill leaves out: when to use it, whether it is deterministic or model-backed, every argument and what it is for, a worked invocation, the result, and the failures.
+    evidence: src/vid/core/skill.py:13-55: The authoritative registry exposes 20 capabilities, and the CLI additionally exposes four audio subcommands, all of whose rendered `--help` documents were checked.
+    evidence: src/vid/cli.py:91-160: `trim`, `retime`, `zoom`, `stitch`, and `caption` accept optional source inputs and several flags with defaults, including `trim --from=0`, `zoom --to=1.3 --duration=3.0`, and `stitch --duration=0.5`.
+    evidence: src/vid/verbdoc.py:37-106: The rendered skills for trim, cut, retime, and zoom provide use and examples but lack an argument/default inventory, result shape, and command-specific failures required for a caller to invoke them reliably.
+    evidence: src/vid/cli.py:299-333: Vignette, grade, and lut have distinct argument schemas but all route to the single `look` document, so that document cannot state every argument and default for each capability.
+    evidence: src/vid/verbdoc.py:397-443: The shared look skill contains examples and general rationale but does not document vignette's `--strength` default, grade's `--look`/`--list` behavior, lut's required table argument, their result forms, or their failures.
+    suggestion: Give every registered capability, including each nested audio command, a capability-specific rendered skill with explicit kind, complete CLI/library argument list and defaults, worked invocation, result shape, and non-zero/failure conditions. Generate or validate the argument/default sections from the command signatures so the skills cannot drift.
+
+  artifact-location-named
+    spec: Where a capability writes an artifact, such as a profile, document, or configuration, to a file, the result clearly identifies its location.
+    evidence: src/vid/cli.py:170-179: `render` accepts a caller-supplied output path and prints the library result, but does not establish a base for a relative argument.
+    evidence: src/vid/lib.py:77-99: Render writes to the supplied `output` and returns that same raw string, so `out.mp4` is reported without a resolvable base.
+    evidence: src/vid/lib.py:452-464: Audio extraction writes to and reports the raw caller-supplied `output` string, with the same ambiguity for a relative path.
+    evidence: src/vid/lib.py:587-600: Narration rendering writes to and reports the raw `out` string, likewise without stating a base.
+    evidence: src/vid/lib.py:354-368: In contrast, index reports its stored index path in the returned result.
+    evidence: src/vid/lib.py:567-578: The default narration-track result explicitly includes the generated track path.
+    suggestion: Resolve caller-selected artifact paths to absolute paths before writing and return/print those resolved paths. Alternatively, explicitly state that every relative result path is relative to the invocation working directory.
+
+  failure-names-remedy
+    spec: Failures are loud and they name the remedy. A caller should never have to infer what went wrong from an empty result.
+    evidence: src/vid/index.py:99-103: `load()` deserializes an existing index with `json.loads(path.read_text(...))` without translating malformed JSON into a `VidError` that explains how to repair or rebuild the index.
+    evidence: src/vid/cli.py:387-394: the CLI converts only `VidError` to a stderr diagnostic and exit 1, so the malformed-index `JSONDecodeError` escapes as a traceback rather than a remedial failure.
+    evidence: src/vid/verify.py:43-50: an ffprobe failure raises `ffprobe could not read ...: <raw stderr>` without an action the caller can take.
+    evidence: src/vid/narrate.py:263-291: narration assembly reports only `Could not assemble the narration: <raw stderr>` and gives no remediation for the external-command failure.
+    suggestion: Wrap persisted-index parse failures in `VidError` that names the index path and tells the caller to remove it and rerun `vid index`; extend external-command wrappers to include the relevant check or corrective action rather than raw stderr alone. Ensure all expected I/O and dependency failures crossing the CLI boundary receive similarly actionable diagnostics.
+
+  prerequisite-failures-match-manifest
+    spec: **A missing prerequisite** fails immediately, naming what is absent and how to install it. The manifest already declares these, so the failure and the manifest must agree.
+    evidence: src/vid/SMART_TOOL.md:21-65: the manifest declares ffmpeg, faster-whisper, piper-tts, gh, and a GitHub Copilot subscription with install references and optionality.
+    evidence: src/vid/intelligence/copilot.py:36-47: the gh preflight detects a missing CLI but says only `Install gh` rather than supplying the manifest's `https://cli.github.com/` install reference.
+    evidence: src/vid/lib.py:314-349: `vid index --vision` builds and writes the index before it obtains and preflights the model provider, so a missing gh/Copilot prerequisite is discovered only after index state has been written.
+    evidence: src/vid/index.py:234-249: `build()` creates the index directory and writes the index file, confirming that the preceding provider prerequisite failure can occur after work and persistent state.
+    suggestion: For `index --vision`, confirm intent and preflight the provider before calling `build()` so missing gh/Copilot access leaves no new index state. Include each manifest install reference directly in the corresponding prerequisite failure, particularly the gh CLI URL, and validate Copilot access before work begins.
+
+13 adhere, 4 deviate, 0 not applicable, 0 unclear.

@@ -1,0 +1,71 @@
+Spec adherence of /mnt/linuxdata/workspaces/hackathon-smart-tools/amplifier-smart-tools-research/tools/deep-research:
+  adheres library-holds-every-capability: src/deep_research/__init__.py:31-116 exposes manifest, configuration, run navigation, URL classification, estimation, and the primary workflow as ordinary library functions.
+  adheres cli-is-thin: src/deep_research/cli.py:210-336 constructs argparse parsers and binds flags to handlers; its only behavior-changing values are forwarded as library arguments.
+  deviates help-comes-from-library: src/deep_research/cli.py:48-142 defines RESEARCH_CAPABILITY, including the research capability's description, arguments, result shape, and failures, in the CLI module.
+  adheres genuinely-model-backed: src/deep_research/research.py:307-314: The public research workflow preflights both the evidence backend and reasoning provider before work begins.
+  adheres ai-capabilities-identifiable: src/deep_research/SMART_TOOL.md:63-68: The capability documentation explicitly lists the deterministic verbs and identifies `research` as model-backed, token-consuming, and variable between runs.
+  adheres no-provider-failure-names-remedy: src/deep_research/research.py:307-314: Both provider seams are preflighted before `RunWriter` is created or any evidence/model work is sent.
+  deviates tool-skill-content: src/deep_research/SMART_TOOL.md:45-61 — The manifest body explains JSON output, appropriate multi-source questions, durable evidence, and explicit non-goals.
+  deviates capability-skills-complete: src/deep_research/__init__.py:119-134 — The library registry declares manifest, check, config, list, status, read, sources, render, classify, estimate, and research as capabilities.
+  not-applicable agent-skill-is-thin: src/deep_research/__init__.py:156-189 — The tool defines installation data and describes `pointer_skill()` as a runtime-built pointer skill rather than a committed Agent Skill file.
+  adheres manifest-describes-the-tool: src/deep_research/SMART_TOOL.md:5-11 — The description first states the multi-source, cited brief the tool produces, then gives reach-for triggers and concrete outcome-oriented use cases.
+  adheres context-accepted-as-data: src/deep_research/cli.py:284 accepts the research input as the `--query TEXT` value rather than a file or material reference.
+  adheres stdout-results-stderr-diagnostics: src/deep_research/cli.py:366-383 obtains a handler result and sends only that result through `emit`; caught failures use `emit_error` and return their non-zero exit code.
+  adheres artifact-location-named: src/deep_research/research.py:558-568 returns the completed run's resolved absolute `path` alongside the result after writing its evidence files.
+  adheres files-outside-install-tree: packages/research-core/src/research_core/config.py:71-73 sets the default runs directory beneath `$XDG_STATE_HOME` or `~/.local/state`, outside the installation and arbitrary working directory.
+  deviates failure-names-remedy: packages/research-core/src/research_core/api.py:152 directly creates the requested render parent and writes the output file without converting an `OSError` into a tool error, so an unwritable `--out` path can escape as a raw filesystem exception after directories have been created.
+  deviates partial-results-are-failures: packages/research-core/src/research_core/backends/agent.py:157 silently skips every non-object source entry and every entry with an empty or duplicate URL, then returns only the retained sources.
+  deviates prerequisite-failures-match-manifest: src/deep_research/SMART_TOOL.md:15 declares only `perplexity` and `ai-provider` in `requires`, both optional, with no entry for a writable engine home.
+
+Deviations:
+
+  help-comes-from-library
+    spec: What `--help` prints is a skill, the tool's on the tool and a capability's on that capability, and every skill comes from the library. The CLI prints it and adds nothing.
+    evidence: src/deep_research/cli.py:48-142 defines RESEARCH_CAPABILITY, including the research capability's description, arguments, result shape, and failures, in the CLI module.
+    evidence: src/deep_research/cli.py:328 attaches that CLI-local metadata to the research subparser, and lines 332-334 then wire it into the command's help.
+    evidence: packages/research-core/src/research_core/skill.py:455-460 renders a supplied CapabilitySkill for --help but otherwise derives the document from the argparse subparser.
+    evidence: packages/research-core/src/research_core/skill.py:483-510 confirms that verbs without _capability_skill use the subparser-derived fallback; src/deep_research/cli.py:223-270 creates manifest, skill, and config without such metadata, so their --help content is assembled from CLI-defined parsers.
+    evidence: src/deep_research/cli.py:220 does correctly route root --help directly to deep_research.skill, and src/deep_research/__init__.py:179-302 implements that root skill in the library; the defect is limited to per-capability help provenance.
+    suggestion: Move the research CapabilitySkill and capability-help definitions for manifest, skill, and config into deep_research's library entry point (or a library module it exposes). Have each subcommand's --help call a library renderer/callback directly, rather than CLI-local metadata or the argparse-derived fallback.
+
+  tool-skill-content
+    spec: It says what an agent would otherwise get wrong: when to reach for the tool and when not, install and prerequisites, worked invocations, sharp edges, where to read more. The Agent Skills ceiling of 500 lines applies.
+    evidence: src/deep_research/SMART_TOOL.md:45-61 — The manifest body explains JSON output, appropriate multi-source questions, durable evidence, and explicit non-goals.
+    evidence: src/deep_research/SMART_TOOL.md:63-69 — The body distinguishes deterministic and model-backed verbs and directs callers to each verb's `--help`.
+    evidence: src/deep_research/__init__.py:156-189 — The source explicitly keeps the copy-pasteable `INSTALL` commands out of both `--help` and the rendered tool skill.
+    evidence: src/deep_research/SMART_TOOL.md:16-40 — The manifest names the Perplexity and AI-provider prerequisites and points their installation details to `docs/CONFIGURATION.md`.
+    evidence: README.md:11-20 — A copy-pasteable installation command and pointers to configuration documentation exist in the README but are not in the rendered tool skill.
+    suggestion: Put a copy-pasteable installation command and a concise prerequisites/setup pointer in the root `--help` skill (or render them from the manifest). Retain the current selection guidance, non-goals, examples, sharp edges, and capability-help routing; the rendered skill is 146 lines, so it remains well below 500 lines.
+
+  capability-skills-complete
+    spec: That is the capability's skill, required for every capability: the same shape as the tool's, scoped to one capability, and carrying what the tool's skill leaves out: when to use it, whether it is deterministic or model-backed, every argument and what it is for, a worked invocation, the result, and the failures.
+    evidence: src/deep_research/__init__.py:119-134 — The library registry declares manifest, check, config, list, status, read, sources, render, classify, estimate, and research as capabilities.
+    evidence: src/deep_research/cli.py:223-270 — `manifest`, `skill`, and `config` are exposed CLI verbs, but their parser defaults set only handlers and no `CapabilitySkill` metadata.
+    evidence: packages/research-core/src/research_core/skill.py:219-244 — A complete capability skill model includes arguments, a worked invocation, result fields, and failures.
+    evidence: packages/research-core/src/research_core/skill.py:282-295 — The renderer emits Worked invocation, Result, and Failures only when that capability metadata supplies them.
+    evidence: src/deep_research/cli.py:247-269 — `config` accepts `--runs-dir`, `--backend`, and `--depth`; its rendered `--help` omitted their defaults as well as worked invocation, result fields, and failures.
+    suggestion: Give `config`, `manifest`, and `skill` explicit `CapabilitySkill` definitions, including a real invocation, concrete envelope result fields, and success/failure behavior; document the `config` argument defaults. Ensure the `skill` verb is included in the same complete capability registry/help path as the other exposed verbs.
+
+  failure-names-remedy
+    spec: Failures are loud and they name the remedy. A caller should never have to infer what went wrong from an empty result.
+    evidence: packages/research-core/src/research_core/api.py:152 directly creates the requested render parent and writes the output file without converting an `OSError` into a tool error, so an unwritable `--out` path can escape as a raw filesystem exception after directories have been created.
+    evidence: src/deep_research/cli.py:375 catches every such escaped exception and emits only its type/raw text with the generic instruction to report a traceback, but does not emit that traceback.
+    evidence: packages/research-core/src/research_core/envelope.py:91 writes precisely the supplied generic error envelope to stderr, so it cannot add the missing failed path, cleanup state, or actionable filesystem remedy.
+    suggestion: Catch output-directory creation and output-file write failures at the render boundary, naming the target path and telling the caller to choose or make a writable path; state any directory left behind. Make the generic CLI fallback log the traceback it tells callers to report, while preserving a concrete remediation for expected OS errors.
+
+  partial-results-are-failures
+    spec: **A partial result** is a failure unless the capability documents partial completion as a valid outcome, in which case the result says which parts succeeded. A capability never silently returns the portion that worked.
+    evidence: packages/research-core/src/research_core/backends/agent.py:157 silently skips every non-object source entry and every entry with an empty or duplicate URL, then returns only the retained sources.
+    evidence: src/deep_research/research.py:400 writes that reduced list as `sources.json` and only fails when the list is entirely empty at lines 411-415, so a mixed valid/invalid source response completes successfully without recording omitted entries.
+    evidence: src/deep_research/SMART_TOOL.md:65 documents `research` as either a model-backed result or a failure when unavailable, but does not document a partial-source outcome or per-source completion status.
+    suggestion: Validate every source entry and fail/retry the gather response when any requested source record is malformed, unless malformed entries are an explicitly supported partial outcome. If partial sources are supported, document that outcome and return per-entry status (including each omitted entry and reason) in the research result.
+
+  prerequisite-failures-match-manifest
+    spec: **A missing prerequisite** fails immediately, naming what is absent and how to install it. The manifest already declares these, so the failure and the manifest must agree.
+    evidence: src/deep_research/SMART_TOOL.md:15 declares only `perplexity` and `ai-provider` in `requires`, both optional, with no entry for a writable engine home.
+    evidence: src/deep_research/research.py:307 preflights both the evidence backend and reasoning provider before a run begins.
+    evidence: packages/research-core/src/research_core/engine.py:553 makes writable engine storage part of provider preflight by calling `ensure_engine_home_usable`.
+    evidence: packages/research-core/src/research_core/engine.py:266 checks/creates the engine home and at lines 303-308 fails when it cannot write there, despite that prerequisite having no manifest declaration or install/configuration reference.
+    suggestion: Declare writable engine storage as a manifest requirement (optional if deterministic verbs remain usable), with its purpose, reduced form, and `docs/CONFIGURATION.md` install/configuration reference. Keep its existing early preflight and align the requirement text with the `engine_home`/`AMPLIFIER_AGENT_HOME` remedy.
+
+10 adhere, 6 deviate, 1 not applicable, 0 unclear.

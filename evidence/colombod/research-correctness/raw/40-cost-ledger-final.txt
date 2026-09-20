@@ -1,0 +1,11 @@
+run           status   what it was for              reported $   真actual $   
+dr-dd376b7d   failed   reported=0.026830  discarded_not_reported=0.343947  real=0.370777
+dr-4aee4213   failed   reported=0.012381  discarded_not_reported=0.000000  real=0.012381
+dr-6f447489   complete reported=0.054127  discarded_not_reported=0.000000  real=0.054127
+dr-e4e83946   running  reported=0.000000  discarded_not_reported=0.000000  real=0.000000
+fc-55d7c403   failed   reported=0.000000  discarded_not_reported=0.000000  real=0.000000
+fc-e62be46c   failed   reported=0.000000  discarded_not_reported=0.000000  real=0.000000
+fc-45813ee9   complete reported=0.096276  discarded_not_reported=0.000000  real=0.096276
+
+TOTAL reported by the tools: $0.1896
+TOTAL actually spent:        $0.5336

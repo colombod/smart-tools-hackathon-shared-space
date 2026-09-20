@@ -1,0 +1,22 @@
+=== tally probes ===
+--- verdicts (no filter) tally:
+None count= 4
+--- verdicts --verdict refuted:
+None count= 1 ['RFC 1035 limits a complete domain name t']
+--- run.json tally field:
+{
+ "confidence": "high",
+ "counts": {
+  "claims": 4,
+  "opinion": 1,
+  "refuted": 1,
+  "sources": 9,
+  "supported": 1,
+  "unverifiable": 1
+ },
+ "inherited_from": "dr-6f447489",
+ "status": "complete"
+}
+
+--- verdicts.json on disk: does it carry a tally?
+<class 'dict'> ['complete', 'run_id', 'schema', 'verdicts']

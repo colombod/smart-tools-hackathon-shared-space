@@ -1,0 +1,108 @@
+Spec adherence of /mnt/linuxdata/workspaces/hackathon-smart-tools/amplifier-smart-tools-video:
+  deviates library-holds-every-capability: src/vid/cli.py:99: The `trim` command parses the domain time values and composes the `Trim` operation onto the plan itself rather than calling a corresponding library capability.
+  deviates cli-is-thin: src/vid/cli.py:99: `trim` invokes timecode parsing and constructs the domain `Trim` operation instead of forwarding its inputs to the library.
+  adheres help-comes-from-library: src/vid/cli.py:33: The tool-level `--help` callback echoes `lib.skill()` unchanged and exits.
+  adheres genuinely-model-backed: src/vid/narrate.py:162 builds a narration prompt from the caller's prompt and indexed video context, then uses the model reply as the script lines returned to the caller.
+  adheres ai-capabilities-identifiable: skills/vid/SKILL.md:50 distinguishes provider-backed subpaths (`index --vision`, semantic `find`, and transition descriptions) from deterministic paths and identifies `gh auth login` with Copilot as their setup.
+  adheres no-provider-failure-names-remedy: src/vid/intelligence/copilot.py:39 fails preflight when `gh` is absent with an instruction to install it and run `gh auth login`, and src/vid/intelligence/copilot.py:44 similarly names sign-in and Copilot access when token minting fails.
+  deviates tool-skill-content: src/vid/SMART_TOOL.md:104-106 supplies a positive “When to reach for it” section, and lines 114-134 provide copy-pasteable installation commands and named prerequisites.
+  deviates capability-skills-complete: src/vid/cli.py:225-235 accepts `vid index VIDEO [--speech/--no-speech] [--model MODEL] [--vision] [--yes]`, including the default model `base`, but src/vid/verbdoc.py:420-469 never documents `--model` or its default.
+  deviates agent-skill-is-thin: skills/vid/SKILL.md:1-18 has the required Agent Skills frontmatter, including `name` and a discovery-oriented description.
+  adheres manifest-describes-the-tool: src/vid/SMART_TOOL.md:6 first states the video-editing scope, then gives concrete reach-for-it language, discoverability terms, supported outcomes, and explicit non-goals.
+  adheres context-accepted-as-data: src/vid/lib.py:426-434 exposes narration free-text as the `prompt: str` library argument rather than requiring a file reference.
+  deviates stdout-results-stderr-diagnostics: src/vid/lib.py:307-310 writes the vision-index cost notice to stderr but uses `input("  Describe them? [y/N] ")`, whose prompt is emitted to stdout before the result.
+  adheres artifact-location-named: src/vid/lib.py:81-85 returns the caller-supplied render output path after the captured ffmpeg invocation succeeds, and src/vid/cli.py:221-222 prints that result.
+  deviates files-outside-install-tree: src/vid/index.py:30-38 directs index state to `VID_INDEX_DIR` or the conventional per-user XDG state location, and src/vid/index.py:217-219 writes there.
+  deviates failure-names-remedy: src/vid/lib.py:81-84 runs ffmpeg and raises `ffmpeg failed:` followed only by its raw stderr tail, with no corrective action for the caller.
+  deviates partial-results-are-failures: src/vid/vision.py:59-88 loops over shots but silently drops each failed ffmpeg frame extraction, failing only when every extraction fails.
+  deviates prerequisite-failures-match-manifest: src/vid/SMART_TOOL.md:21-58 declares only ffmpeg, faster-whisper, gh, and a Copilot subscription in `requires`; it has no entry for the Piper speech synthesizer used by narration.
+
+Deviations:
+
+  library-holds-every-capability
+    spec: Everything the tool can do is reachable from the library. The rule is one-directional and absolute: no capability exists only in a wrapper.
+    evidence: src/vid/cli.py:99: The `trim` command parses the domain time values and composes the `Trim` operation onto the plan itself rather than calling a corresponding library capability.
+    evidence: src/vid/cli.py:122: The `retime` command owns the mutually-exclusive speed/ramp rule and proceeds to tokenize and validate the ramp in the CLI.
+    evidence: src/vid/cli.py:160: The `stitch` command decides the input-plan/source arrangement, validates the clip count, and constructs `Stitch`; `lib.resolve_transition` covers only one part of this command's capability.
+    evidence: src/vid/cli.py:376: The `grade` command branches between listing looks, rejecting a missing look, and building the grade operation in the wrapper.
+    evidence: src/vid/cli.py:438: The `transitions` command imports the preset data and computes/renders the described catalogue directly, while `lib.py` exposes no `transitions` capability.
+    evidence: src/vid/lib.py:200: The library exposes transition resolution but not the `stitch` composition that the CLI performs around it. 
+    suggestion: Add public library functions for every plan-editing and catalogue capability (including trim, cut, retime, zoom, stitch, caption, audio edits, recolor, vignette, grade, LUT, plan display, and transitions) that own validation, normalization, operation construction, and result selection. Have the CLI only read its transport input, call those functions, and render their returned plan or text.
+
+  cli-is-thin
+    spec: Thin means the CLI hooks up argument parsing and I/O conventions and then calls the library. Domain logic in the CLI is a defect: it is capability the library cannot reach.
+    evidence: src/vid/cli.py:99: `trim` invokes timecode parsing and constructs the domain `Trim` operation instead of forwarding its inputs to the library.
+    evidence: src/vid/cli.py:122: `retime` contains domain validation, branches on the selected retiming form, parses the ramp grammar, and constructs `RampPoint` values.
+    evidence: src/vid/cli.py:160: `stitch` contains the domain decision for piped versus explicit sources and rejects an insufficient clip sequence before constructing the edit.
+    evidence: src/vid/cli.py:376: `grade` implements the `--list` result path and the missing-look domain error in the CLI.
+    evidence: src/vid/cli.py:441: `transitions --describe` calculates alignment and iterates the preset data to produce a domain result rather than merely rendering a library return value.
+    suggestion: Move the command-specific plan construction, domain parsing/validation, branching, and catalogue formatting into the library capabilities. Retain only Typer argument handling, permitted transport I/O, rendering of library values, and exit-code mapping in `cli.py`.
+
+  tool-skill-content
+    spec: It says what an agent would otherwise get wrong: when to reach for the tool and when not, install and prerequisites, worked invocations, sharp edges, where to read more. The Agent Skills ceiling of 500 lines applies.
+    evidence: src/vid/SMART_TOOL.md:104-106 supplies a positive “When to reach for it” section, and lines 114-134 provide copy-pasteable installation commands and named prerequisites.
+    evidence: src/vid/SMART_TOOL.md:66-102 gives a worked chained invocation and the principal chaining sharp edge, while lines 108-112 point to the command help, library source, and deeper documentation.
+    evidence: src/vid/SMART_TOOL.md:6 contains the needed non-goals (images, audio-only files, and downloading), but this is frontmatter rather than the manifest body that `--help` renders; src/vid/core/skill.py:87-95 constructs the rendered skill from `manifest.body`.
+    evidence: src/vid/SMART_TOOL.md:61-153 is the manifest body and src/vid/core/skill.py:87-95 adds the wrapper; the rendered `vid --help` was 129 lines, below the 500-line ceiling. 
+    suggestion: Add a “When not to use vid” section to the manifest body that names images, audio-only files, and downloading video. Keep the existing install, worked invocation, sharp-edge, and documentation guidance.
+
+  capability-skills-complete
+    spec: That is the capability's skill, required for every capability: the same shape as the tool's, scoped to one capability, and carrying what the tool's skill leaves out: when to use it, whether it is deterministic or model-backed, every argument and what it is for, a worked invocation, the result, and the failures.
+    evidence: src/vid/cli.py:225-235 accepts `vid index VIDEO [--speech/--no-speech] [--model MODEL] [--vision] [--yes]`, including the default model `base`, but src/vid/verbdoc.py:420-469 never documents `--model` or its default.
+    evidence: src/vid/cli.py:268-313 exposes four distinct audio subcommands with different required arguments, but every one uses the same `_doc("audio")` document (lines 271, 283, 298, and 310), so `vid audio remove --help`, `replace --help`, `mix --help`, and `extract --help` render no command-specific argument/result/failure skill.
+    evidence: src/vid/verbdoc.py:581-584 says `vid manifest` returns a `capabilities` field, while src/vid/schemas.py:28-38 defines the emitted Manifest fields and contains no such field, making that capability’s documented result incorrect.
+    evidence: src/vid/verbdoc.py:620-628 appends the generic plan-pipe rule to all documents except render, plan, and check; this makes the rendered `index` help claim it reads and writes an edit plan even though src/vid/cli.py:225-235 requires a video argument and emits the index report. 
+    suggestion: Give every exposed command, including each `audio` subcommand, a command-specific skill that lists every accepted argument and default, result shape, and non-zero failures. Correct the `manifest` result description and apply the plan-pipe rule only to commands that actually consume and emit plans.
+
+  agent-skill-is-thin
+    spec: The skill carries the manifest's name and description, the install commands, and the instruction to run `--help` and follow it. Nothing more.
+    evidence: skills/vid/SKILL.md:1-18 has the required Agent Skills frontmatter, including `name` and a discovery-oriented description.
+    evidence: skills/vid/SKILL.md:22-40 includes valid installation commands, and lines 83-93 appropriately instruct the reader to run `vid --help`, `vid <verb> --help`, and `vid check`.
+    evidence: skills/vid/SKILL.md:45-69 duplicates a capability-to-prerequisite matrix and per-capability setup behavior, which can drift from the runtime skill.
+    evidence: skills/vid/SKILL.md:95-115 restates the runtime skill’s chaining contract and supplies a capability-level invocation rather than remaining a thin bootstrap document.
+    suggestion: Reduce the shipped Agent Skill to its frontmatter, a short summary, install commands, and an instruction to run `vid --help` and follow it. Remove the capability matrix, setup details, and chaining guidance so runtime help remains the sole source of that information.
+
+  stdout-results-stderr-diagnostics
+    spec: Stdout carries the requested result, whether text or structured data. Stderr carries diagnostics such as progress messages and warnings, keeping them separate from results that callers may pipe to another command or save to a file.
+    evidence: src/vid/lib.py:307-310 writes the vision-index cost notice to stderr but uses `input("  Describe them? [y/N] ")`, whose prompt is emitted to stdout before the result.
+    evidence: src/vid/cli.py:225-235 prints the `lib.index` return value to stdout, so an interactive `vid index --vision` interleaves that confirmation prompt with the requested result.
+    evidence: src/vid/cli.py:467-470 sends caught `VidError` messages to stderr and returns exit code 1; the defect is confined to the interactive confirmation prompt.
+    suggestion: Write the confirmation prompt explicitly to `sys.stderr` and read the response from stdin without a prompt (for example, `sys.stderr.write(...)` followed by `sys.stdin.readline()`). This keeps stdout machine-readable for the complete interactive path.
+
+  files-outside-install-tree
+    spec: State, caches, logs, and temporary files belong outside the tool's own directory. A smart tool is installed from a distribution it does not own and is invoked from a working directory it did not choose, so neither is a safe place to write. State goes to the conventional per-user location for the platform, temporary files to a temporary directory, and output artifacts where the caller asked for them.
+    evidence: src/vid/index.py:30-38 directs index state to `VID_INDEX_DIR` or the conventional per-user XDG state location, and src/vid/index.py:217-219 writes there.
+    evidence: src/vid/voice.py:38-45 directs voice-model cache data to `VID_VOICES_DIR` or the conventional per-user XDG cache location.
+    evidence: src/vid/lib.py:472-477 creates a `tempfile.mkdtemp` narration directory and writes intermediate WAVs plus `narration.wav` into it, but does not scope it with a cleanup context.
+    evidence: src/vid/compile.py:384-393 writes a generated LUT in `tempfile.gettempdir()` and deliberately leaves it for reuse; no cleanup or per-user cache management is present.
+    evidence: src/vid/vision.py:102-104 and src/vid/transitions.py:371-413 show the correct scoped `TemporaryDirectory` pattern used for the other temporary frame/probe outputs.
+    suggestion: Clean up narration intermediates and render-only LUTs with scoped temporary directories; preserve a narration track only by placing that returned artifact at a caller-selected or documented durable location. If LUT reuse is intentional cache state, place it in an XDG/per-user cache directory and manage its lifecycle rather than leaving files in the shared temporary directory.
+
+  failure-names-remedy
+    spec: Failures are loud and they name the remedy. A caller should never have to infer what went wrong from an empty result.
+    evidence: src/vid/lib.py:81-84 runs ffmpeg and raises `ffmpeg failed:` followed only by its raw stderr tail, with no corrective action for the caller.
+    evidence: src/vid/probe.py:37-47 raises `ffprobe could not read <path>: <stderr>` on an external-command failure, again without an action beyond the raw diagnostic.
+    evidence: src/vid/index.py:135-153 invokes `ffprobe` without a presence check, so a missing executable raises `FileNotFoundError` rather than the displayed `VidError`.
+    evidence: src/vid/cli.py:456-462 catches and formats only `VidError`; the missing-executable exception from the index path escapes this boundary as a traceback instead of a remedial diagnostic.
+    evidence: src/vid/plan.py:249-264 lets `Plan.model_validate(data)` raise its dependency validation error directly, which the CLI boundary does not translate into a message telling the caller how to repair the plan.
+    suggestion: Wrap every external-command and validation failure in `VidError` that states the failed operation and a concrete next action (for example, verify the input or run `vid check`/install the named prerequisite). Preserve useful stderr as context, but do not make it the entire remedy.
+
+  partial-results-are-failures
+    spec: **A partial result** is a failure unless the capability documents partial completion as a valid outcome, in which case the result says which parts succeeded. A capability never silently returns the portion that worked.
+    evidence: src/vid/vision.py:59-88 loops over shots but silently drops each failed ffmpeg frame extraction, failing only when every extraction fails.
+    evidence: src/vid/vision.py:130-141 accepts and returns any nonempty subset of model descriptions, without requiring descriptions for all extracted frames or recording the omitted shot IDs.
+    evidence: src/vid/index.py:195-201 applies only returned descriptions to the record and leaves all other pending shots indistinguishable from not-yet-attempted shots.
+    evidence: src/vid/lib.py:329-343 persists that partially described record and reports only an aggregate `N described` count, not which requested shots failed or why.
+    evidence: src/vid/color.py:175-204 catches a `VidError` for an individual sampled frame, continues, and returns color statistics from the remaining samples as though they represented the complete sampling plan.
+    suggestion: Fail vision indexing and color measurement when any required frame/sample cannot be obtained, or explicitly document partial completion and return per-shot/per-sample status with the failed IDs, causes, and successful IDs.
+
+  prerequisite-failures-match-manifest
+    spec: **A missing prerequisite** fails immediately, naming what is absent and how to install it. The manifest already declares these, so the failure and the manifest must agree.
+    evidence: src/vid/SMART_TOOL.md:21-58 declares only ffmpeg, faster-whisper, gh, and a Copilot subscription in `requires`; it has no entry for the Piper speech synthesizer used by narration.
+    evidence: src/vid/voice.py:48-51 and src/vid/voice.py:91-92 check for the `piper` package and fail narration when it is absent, making it an undeclared prerequisite.
+    evidence: src/vid/lib.py:468-472 calls the model-backed `write_script` before constructing `Speaker`, so the missing-Piper prerequisite is discovered after a model request can already have spent tokens.
+    evidence: src/vid/lib.py:290 calls index construction directly, while src/vid/index.py:135-149 runs `ffprobe` without an availability preflight; a missing ffmpeg/ffprobe therefore fails late and outside the tool's remedial error path.
+    evidence: src/vid/SMART_TOOL.md:22-39 declares ffmpeg as a non-optional prerequisite and provides its install reference, but the index path does not surface that same prerequisite/install guidance when it is absent.
+    suggestion: Add Piper as an optional `requires` entry with its purpose and installation reference, and preflight it before narration's first model call. Preflight ffmpeg/ffprobe before index work begins and raise a `VidError` whose install reference agrees with the manifest.
+
+7 adhere, 10 deviate, 0 not applicable, 0 unclear.
