@@ -1,0 +1,37 @@
+Spec adherence of /mnt/linuxdata/workspaces/hackathon-smart-tools/amplifier-smart-tools-lore:
+  adheres library-holds-every-capability: pyproject.toml:20 exposes only the `lore.cli:main` console wrapper; the surface search found no MCP or web-service entry point.
+  adheres cli-is-thin: src/lore/cli.py:102-284 command bodies collect Typer arguments, invoke one library facade, and render the returned model as text or JSON.
+  adheres help-comes-from-library: src/lore/cli.py:29-34 implements each capability's `--help` callback by echoing exactly `lib.skill(self.name)` and exiting.
+  adheres genuinely-model-backed: src/lore/capabilities/explain/core.py:62-87: `explain` preflights its intelligence provider, constructs an `AgentRequest` from the caller's repository/question and retrieved or caller-supplied material, runs the provider, and returns the resulting synthesized `Answer`.
+  adheres ai-capabilities-identifiable: src/lore/core/skill.py:58-69: The single capability table explicitly marks `explain` and `howto` as `model_backed=True`, while all other listed capabilities are false.
+  adheres no-provider-failure-names-remedy: src/lore/capabilities/explain/core.py:62-63 and src/lore/capabilities/howto/core.py:142-143: Both model-backed capability entry points call provider preflight before retrieval or model execution.
+  adheres tool-skill-content: src/lore/SMART_TOOL.md:47-59 — The manifest body explicitly says when to reach for Lore and excludes code-level, ref-specific source-of-truth work.
+  adheres capability-skills-complete: src/lore/core/skill.py:14-70 — The registry enumerates all ten exposed capabilities and assigns each a distinct skill source, including the equivalent core/manifest.md for `manifest`.
+  adheres agent-skill-is-thin: skills/lore/SKILL.md:1-14 — The shipped Agent Skill has the required `name` and discovery-oriented `description` frontmatter, plus permitted license and repository metadata.
+  adheres manifest-describes-the-tool: src/lore/SMART_TOOL.md:5-6 — The description first states that Lore answers library/project/architecture questions from DeepWiki and Context7, then says to reach for it before coding against unfamiliar or freshness-sensitive knowledge.
+  adheres context-accepted-as-data: src/lore/lib.py:98-114 exposes `material: str | None` on `explain` and passes that content unchanged to its implementation.
+  adheres stdout-results-stderr-diagnostics: src/lore/cli.py:138-146 renders the `fetch` result to stdout, including its JSON mode and human-readable cache location.
+  adheres artifact-location-named: src/lore/store.py:68-94 writes wiki pages and `index.json`, then returns a `WikiIndex` with its absolute cache `root` and page paths relative to that stated root.
+  adheres files-outside-install-tree: src/lore/store.py:33-46 places the cache under a caller-configured `LORE_CACHE_DIR` or the platform's conventional per-user cache location, never relative to the package or current working directory.
+  deviates failure-names-remedy: src/lore/grounding.py:125-129: Two raised `LoreError` messages say only that the model omitted structured output or returned an empty answer, with no corrective action.
+  adheres partial-results-are-failures: src/lore/capabilities/explain/core.py:71-87: Both DeepWiki retrievals run without a catch-and-continue path, so either failure prevents an `Answer` from being returned.
+  deviates prerequisite-failures-match-manifest: src/lore/SMART_TOOL.md:34-39: The manifest declares `github-copilot-subscription` as the optional requirement that powers model-backed capabilities and supplies its prerequisite URL.
+
+Deviations:
+
+  failure-names-remedy
+    spec: Failures are loud and they name the remedy. A caller should never have to infer what went wrong from an empty result.
+    evidence: src/lore/grounding.py:125-129: Two raised `LoreError` messages say only that the model omitted structured output or returned an empty answer, with no corrective action.
+    evidence: src/lore/store.py:256-260: A malformed or unreadable existing cache index propagates `ValidationError` or `OSError` instead of being translated to `LoreError` with a cache-repair remedy.
+    evidence: src/lore/cli.py:326-332: The CLI only catches `LoreError`, so those uncaught cache exceptions can escape as a traceback rather than a stderr remedy and controlled non-zero exit.
+    suggestion: Give every model-output validation failure an actionable retry or recovery instruction. Convert cache read/validation errors to `LoreError` that names the corrupt cache path and tells the caller to remove it or run the appropriate refresh command.
+
+  prerequisite-failures-match-manifest
+    spec: **A missing prerequisite** fails immediately, naming what is absent and how to install it. The manifest already declares these, so the failure and the manifest must agree.
+    evidence: src/lore/SMART_TOOL.md:34-39: The manifest declares `github-copilot-subscription` as the optional requirement that powers model-backed capabilities and supplies its prerequisite URL.
+    evidence: src/lore/intelligence/copilot.py:29-52: Model-path preflight only obtains a `gh` token; it has no check for the declared Copilot subscription entitlement.
+    evidence: src/lore/capabilities/howto/core.py:142-173: After that limited preflight, the model-backed capability can perform Context7 and DeepWiki retrieval before attempting the provider run.
+    evidence: src/lore/intelligence/copilot.py:91-135: Provider setup/runtime errors are converted to generic `AgentResult.error` only after session work begins, rather than an immediate missing-subscription failure carrying the manifest's install reference.
+    suggestion: Preflight model-backed capabilities for the GitHub Copilot entitlement before retrieval begins. When it is absent, raise a `LoreError` that names `github-copilot-subscription` and includes the manifest's `https://github.com/github/copilot-cli#prerequisites` reference.
+
+15 adhere, 2 deviate, 0 not applicable, 0 unclear.

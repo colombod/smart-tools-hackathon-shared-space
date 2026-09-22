@@ -1,0 +1,52 @@
+Spec adherence of /mnt/linuxdata/workspaces/hackathon-smart-tools/amplifier-smart-tools-lore:
+  adheres library-holds-every-capability: pyproject.toml:19-20 declares only the `lore.cli:main` CLI entry point; no shipped MCP, web, or other wrapper surface is registered.
+  adheres cli-is-thin: src/lore/cli.py:103-295 shows each command obtaining a result from `lore.lib` and selecting JSON or terminal rendering, without capability composition or domain-state routing.
+  adheres help-comes-from-library: src/lore/cli.py:38-60 defines every capability command's `--help` callback as a direct `typer.echo(lib.skill(self.name))`, while reserving `-h` for Typer's generated terse summary.
+  adheres genuinely-model-backed: src/lore/capabilities/explain/core.py:62-87: `explain` preflights an Intelligence implementation, builds an `AgentRequest` from the caller's question and retrieved or caller-supplied material, runs it, and returns the resulting structured answer.
+  adheres ai-capabilities-identifiable: src/lore/core/skill.py:58-68: The single capability table explicitly marks `explain` and `howto` as `model_backed=True`, while the other capability entries are marked false.
+  adheres no-provider-failure-names-remedy: src/lore/capabilities/explain/core.py:62-65: `explain` calls provider preflight before freshness measurement, retrieval, prompt construction, or model execution.
+  adheres tool-skill-content: src/lore/SMART_TOOL.md:47-57 states both when to reach for Lore and the specific non-goal of code-level ground truth at a ref.
+  deviates capability-skills-complete: src/lore/core/skill.py:13-73 registers all ten exposed capabilities, and each points to its rendered skill source, including the special `core/manifest.md` skill.
+  adheres agent-skill-is-thin: skills/lore/SKILL.md:1-13 supplies the required `name` and discovery-oriented `description` frontmatter, plus optional license and repository metadata.
+  adheres manifest-describes-the-tool: src/lore/SMART_TOOL.md:5-6 first describes Lore's library/project understanding and freshness function, then says to reach for it before coding against an unfamiliar library or repository or when answer age matters.
+  adheres context-accepted-as-data: src/lore/lib.py:98-114: `explain` exposes `material: str | None` and forwards that value directly to the capability implementation.
+  deviates stdout-results-stderr-diagnostics: src/lore/grounding.py:68-89: `caveat_for` defines the caveat as a staleness warning to show alongside an answer.
+  adheres artifact-location-named: src/lore/store.py:59-94: `write_wiki` writes each wiki page and index, then returns a `WikiIndex` carrying the cache `root` and each page's path relative to it.
+  adheres files-outside-install-tree: src/lore/store.py:33-46: `cache_root` resolves cache storage from `LORE_CACHE_DIR` or the platform's conventional per-user cache location, then creates only that root.
+  deviates failure-names-remedy: src/lore/store.py:256-260: A corrupt or unreadable existing cache index can raise `OSError` or Pydantic validation errors directly from `read_text`/`model_validate_json` rather than a `LoreError` that tells the caller to remove and refetch the cache.
+  adheres partial-results-are-failures: src/lore/store.py:176-192: Search reads every indexed page and returns a capped hit list only with the true `total_hits` and a `truncated` flag, rather than silently stopping at the cap.
+  deviates prerequisite-failures-match-manifest: src/lore/SMART_TOOL.md:34-39: The manifest declares `github-copilot-subscription` as an optional prerequisite for model-backed capabilities and supplies its installation reference.
+
+Deviations:
+
+  capability-skills-complete
+    spec: That is the capability's skill, required for every capability: the same shape as the tool's, scoped to one capability, and carrying what the tool's skill leaves out: when to use it, whether it is deterministic or model-backed, every argument and what it is for, a worked invocation, the result, and the failures.
+    evidence: src/lore/core/skill.py:13-73 registers all ten exposed capabilities, and each points to its rendered skill source, including the special `core/manifest.md` skill.
+    evidence: src/lore/cli.py:111-253 defines `--json` with a default of `False` on every non-manifest capability, but the corresponding skills only say to add `--json` and never state that default: src/lore/capabilities/check/SKILL.md:12-13, src/lore/capabilities/docs/SKILL.md:7-10, src/lore/capabilities/explain/SKILL.md:19-20, src/lore/capabilities/fetch/SKILL.md:8-11, src/lore/capabilities/freshness/SKILL.md:8-11, src/lore/capabilities/howto/SKILL.md:19-20, src/lore/capabilities/pages/SKILL.md:5-6, src/lore/capabilities/read/SKILL.md:8-9, and src/lore/capabilities/search/SKILL.md:5-8.
+    evidence: src/lore/lib.py:98-105 and src/lore/lib.py:117-124 accept the `material` library argument with default `None`, while src/lore/capabilities/explain/SKILL.md:15-20 and src/lore/capabilities/howto/SKILL.md:16-20 explain the argument but do not state that default.
+    evidence: src/lore/schemas.py:202-215 defines `Answer.question` and `Answer.target`, but src/lore/capabilities/explain/SKILL.md:33-39 and src/lore/capabilities/howto/SKILL.md:33-39 omit both from their documented result fields.
+    suggestion: For every capability, state each accepted CLI and library argument's default explicitly, including `--json` as `false` and model-backed `material` as `None`. Make each result section enumerate the complete structured result shape (or explicitly describe the complete default text output), keeping it synchronized with the result models.
+
+  stdout-results-stderr-diagnostics
+    spec: Stdout carries the requested result, whether text or structured data. Stderr carries diagnostics such as progress messages and warnings, keeping them separate from results that callers may pipe to another command or save to a file.
+    evidence: src/lore/grounding.py:68-89: `caveat_for` defines the caveat as a staleness warning to show alongside an answer.
+    evidence: src/lore/cli.py:316-321: `_echo_answer` emits `CAVEAT: {result.caveat}` with `typer.echo` without `err=True`, so this warning is written to stdout before the requested answer.
+    evidence: src/lore/cli.py:190-198: the analogous truncated-read diagnostic is correctly sent to stderr with `err=True`, showing the CLI otherwise distinguishes diagnostic output.
+    suggestion: Send the human-mode `CAVEAT` line to stderr (and leave stdout beginning with `result.answer`); retain `caveat` in `--json` because it is then a field of the structured result.
+
+  failure-names-remedy
+    spec: Failures are loud and they name the remedy. A caller should never have to infer what went wrong from an empty result.
+    evidence: src/lore/store.py:256-260: A corrupt or unreadable existing cache index can raise `OSError` or Pydantic validation errors directly from `read_text`/`model_validate_json` rather than a `LoreError` that tells the caller to remove and refetch the cache.
+    evidence: src/lore/cli.py:342-348: The CLI only catches `LoreError`, so those cache exceptions escape as an uncaught traceback instead of being surfaced as a remedial stderr failure.
+    evidence: src/lore/cli.py:303-313: An unreadable `--material-file` is converted to `LoreError`, but its message only reports the failed read and raw OS error; it gives no action such as correcting the path, permissions, or encoding.
+    suggestion: Wrap cache reads/parsing and other filesystem failures in `LoreError` messages that state the affected path and a concrete recovery action (for example, delete the corrupt cache entry and rerun `lore fetch`). Add an actionable remedy to the `--material-file` failure and ensure all expected operational exceptions reach the CLI as `LoreError`.
+
+  prerequisite-failures-match-manifest
+    spec: **A missing prerequisite** fails immediately, naming what is absent and how to install it. The manifest already declares these, so the failure and the manifest must agree.
+    evidence: src/lore/SMART_TOOL.md:34-39: The manifest declares `github-copilot-subscription` as an optional prerequisite for model-backed capabilities and supplies its installation reference.
+    evidence: src/lore/intelligence/copilot.py:29-37: Preflight explicitly does not check the Copilot subscription and only verifies that `gh` can mint a token.
+    evidence: src/lore/capabilities/explain/core.py:62-86: `explain` performs freshness measurement and DeepWiki retrieval after preflight and before the model run where the unverified entitlement can fail.
+    evidence: src/lore/intelligence/copilot.py:165-175: The subscription absence is detected only from an in-flight SDK error, although the eventual message correctly uses the manifest's install URL.
+    suggestion: Add an entitlement check to model-backed preflight, or otherwise gate retrieval until the subscription prerequisite has been verified, so a missing declared subscription fails before source calls or model work. Keep the existing manifest-derived install URL in that failure.
+
+13 adhere, 4 deviate, 0 not applicable, 0 unclear.

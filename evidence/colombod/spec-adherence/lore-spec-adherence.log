@@ -1,0 +1,71 @@
+Spec adherence of /mnt/linuxdata/workspaces/hackathon-smart-tools/amplifier-smart-tools-lore:
+  adheres library-holds-every-capability: pyproject.toml:19-20 registers only the `lore` console entry point, and the source tree contains no separately shipped MCP, HTTP, or UI wrapper.
+  adheres cli-is-thin: src/lore/cli.py:100-257 shows each command collecting Typer arguments, making one corresponding library call, and choosing JSON or terminal rendering of that returned result.
+  adheres help-comes-from-library: src/lore/lib.py:36-53 exposes the tool/capability skill function and the library-owned skill resources to non-CLI callers.
+  adheres genuinely-model-backed: src/lore/core/skill.py:58-69 declares `explain` and `howto` as the two model-backed capabilities.
+  adheres ai-capabilities-identifiable: src/lore/core/skill.py:14-69 is the capability table that labels every capability deterministic or model-backed, explicitly marking only `explain` and `howto` model-backed.
+  adheres no-provider-failure-names-remedy: src/lore/capabilities/explain/core.py:53-56 and src/lore/capabilities/howto/core.py:110-114 call `engine.preflight()` before any source retrieval or model request.
+  adheres tool-skill-content: src/lore/SMART_TOOL.md:47-59: The tool skill explicitly states when to use Lore and names code-level ground truth at a specific ref as a non-goal.
+  adheres capability-skills-complete: src/lore/core/skill.py:14-70: The registry enumerates all ten exposed capabilities, including `manifest`, assigns each a skill, and records whether it is deterministic or model-backed.
+  deviates agent-skill-is-thin: skills/lore/SKILL.md:1-14: The shipped Agent Skill has the required `name` and discovery-oriented `description` frontmatter, plus optional license and metadata.
+  deviates manifest-describes-the-tool: src/lore/SMART_TOOL.md:5-6: The manifest description says what Lore does, but does not state when an agent should reach for it.
+  deviates context-accepted-as-data: src/lore/lib.py:71-75: `fetch` accepts only a repository string and delegates to the fetch core; it exposes no parameter for the wiki content.
+  adheres stdout-results-stderr-diagnostics: src/lore/cli.py:137-144: `fetch` prints only its result to stdout, and its JSON branch serializes only the result model.
+  deviates artifact-location-named: src/lore/store.py:59-86: `write_wiki` writes page files and `index.json` under `root`, then returns that absolute cache root in the `WikiIndex`.
+  adheres files-outside-install-tree: src/lore/store.py:33-46: the cache root is an explicit `LORE_CACHE_DIR` override or a conventional per-user cache location on Windows, macOS, and other platforms before any directory is created.
+  deviates failure-names-remedy: src/lore/sources/deepwiki.py:140-166: DeepWiki transport, HTTP, parsing, rejection, and empty-content failures are wrapped as raw service/error text without an action such as retrying, checking service status, correcting input, or visiting an indexing URL.
+  adheres partial-results-are-failures: src/lore/schemas.py:83-100: `Freshness` represents unavailable signals explicitly with `verdict="unknown"` and per-signal `unmeasured` reasons rather than presenting a full measurement.
+  deviates prerequisite-failures-match-manifest: src/lore/SMART_TOOL.md:27-39 declares the optional `gh` prerequisite with its purpose and the install reference `https://cli.github.com/`, and declares the Copilot subscription as the reduced-capability boundary.
+
+Deviations:
+
+  agent-skill-is-thin
+    spec: The skill carries the manifest's name and description, the install commands, and the instruction to run `--help` and follow it. Nothing more.
+    evidence: skills/lore/SKILL.md:1-14: The shipped Agent Skill has the required `name` and discovery-oriented `description` frontmatter, plus optional license and metadata.
+    evidence: skills/lore/SKILL.md:20-37: It appropriately includes install commands and directs the reader to the tool and capability `--help` output.
+    evidence: skills/lore/SKILL.md:39-49: It additionally provides per-capability CLI invocations, capability-selection descriptions, and model/prerequisite distinctions that duplicate runtime guidance and can drift.
+    suggestion: Remove the “Where to start” command block and the per-capability/model-backed statements after it. Retain the frontmatter, one-paragraph summary, installation commands, and instruction to run and follow `lore --help`.
+
+  manifest-describes-the-tool
+    spec: **`description`** says what the tool does and when to reach for it, in that order. **`use_cases`** are the concrete jobs the tool is for. These are selection aids, not a capability list, and they should read like things a person wants, not like functions the tool exposes.
+    evidence: src/lore/SMART_TOOL.md:5-6: The manifest description says what Lore does, but does not state when an agent should reach for it.
+    evidence: src/lore/SMART_TOOL.md:8-22: The five use cases are concrete user outcomes—understanding a project, obtaining usage guidance, measuring freshness, navigating oversized wikis, and finding documentation—and not a disguised function list.
+    evidence: src/lore/core/skill.py:14-70: The registered capabilities cover the jobs promised by the use cases, including project explanation, library how-to guidance, freshness measurement, caching/bounded reading, and search.
+    suggestion: After the existing what-it-does sentence, add a concise selection clause such as “Reach for it before writing against an unfamiliar library or project, or when documentation freshness matters.” This preserves the required what-then-when ordering.
+
+  context-accepted-as-data
+    spec: **The payload is data, not a reference.** At the library level, a caller passes the actual content. This keeps the library free of assumptions about where the caller's material lives and keeps it usable from processes that have no filesystem in common with the caller. A CLI wrapper may accept a file path and read it into the payload, because that is a convenience of the command line, not a change to what the library accepts.
+    evidence: src/lore/lib.py:71-75: `fetch` accepts only a repository string and delegates to the fetch core; it exposes no parameter for the wiki content.
+    evidence: src/lore/capabilities/fetch/core.py:38-39: the capability obtains the wiki itself through `deepwiki.read_wiki_contents` before writing it.
+    evidence: src/lore/capabilities/docs/core.py:27-29: `docs` resolves a library reference and fetches the documentation itself, with no caller-supplied documentation payload.
+    evidence: src/lore/capabilities/howto/core.py:113-126: `howto` likewise resolves and retrieves Context7/DeepWiki material internally before constructing the model prompt.
+    evidence: src/lore/capabilities/fetch/SKILL.md:1-7: the documented interface says the wiki content never passes through the caller and accepts only a GitHub repository reference.
+    suggestion: Add content-bearing library inputs for externally retrieved wiki/documentation/grounding material, while retaining repository and library references as optional conveniences. The CLI may offer file-based convenience inputs, but it should read them and pass their contents to the library.
+
+  artifact-location-named
+    spec: Where a capability writes an artifact, such as a profile, document, or configuration, to a file, the result clearly identifies its location.
+    evidence: src/lore/store.py:59-86: `write_wiki` writes page files and `index.json` under `root`, then returns that absolute cache root in the `WikiIndex`.
+    evidence: src/lore/schemas.py:113-125: `WikiIndex.root` is an explicit result field naming the cache entry root, and `PageEntry.path` is only relative to it.
+    evidence: src/lore/cli.py:137-144: the default `lore fetch` result prints repository, counts, origin, and titles but never prints `result.root`; only `--json` emits the model containing it.
+    evidence: src/lore/capabilities/docs/core.py:27-38 and src/lore/cli.py:191-198: the other writing capability returns and prints its full document path.
+    suggestion: Include `result.root` in the default `lore fetch` output, before listing page paths. Keep the structured `WikiIndex.root` field as the library-facing location.
+
+  failure-names-remedy
+    spec: Failures are loud and they name the remedy. A caller should never have to infer what went wrong from an empty result.
+    evidence: src/lore/sources/deepwiki.py:140-166: DeepWiki transport, HTTP, parsing, rejection, and empty-content failures are wrapped as raw service/error text without an action such as retrying, checking service status, correcting input, or visiting an indexing URL.
+    evidence: src/lore/sources/context7.py:79-84: A Context7 transport failure is exposed as `Context7 request ... failed: <raw error>` with no caller remedy.
+    evidence: src/lore/intelligence/copilot.py:132-133: SDK/runtime exceptions are converted to an `AgentResult` containing only the exception class and raw message; src/lore/grounding.py:117-118 then reports that raw message as the synthesis failure.
+    evidence: src/lore/sources/github.py:96-103: Successful `gh api` output is passed directly to `json.loads`, so malformed dependency output can raise an uncaught `JSONDecodeError`; src/lore/cli.py:286-292 catches only `LoreError`, allowing that traceback to escape.
+    evidence: src/lore/store.py:59-86: Wiki pages are written one by one before the index is atomically written, but an intervening storage failure is neither converted to a remedy-bearing error nor reported as leaving an incomplete cache entry.
+    evidence: src/lore/cli.py:286-292: Named `LoreError` failures are correctly written to stderr and return exit code 1, but this does not cover the unhandled paths above.
+    suggestion: Convert every external, parsing, and storage failure at its boundary to a remedy-bearing `LoreError`, including a concrete next action and any cache state left behind. Catch malformed `gh` output and storage errors, and make interrupted fetches clean up or explicitly report the incomplete cache path.
+
+  prerequisite-failures-match-manifest
+    spec: **A missing prerequisite** fails immediately, naming what is absent and how to install it. The manifest already declares these, so the failure and the manifest must agree.
+    evidence: src/lore/SMART_TOOL.md:27-39 declares the optional `gh` prerequisite with its purpose and the install reference `https://cli.github.com/`, and declares the Copilot subscription as the reduced-capability boundary.
+    evidence: src/lore/intelligence/copilot.py:36-42 performs the model-path preflight before retrieval work and names `gh`, but its missing-`gh` failure says only `Install gh` and does not include the manifest's install reference.
+    evidence: src/lore/intelligence/copilot.py:43-46 detects a signed-out `gh` during the same preflight and tells the caller to run `gh auth login`, matching the manifest's authentication requirement.
+    evidence: src/lore/capabilities/check/core.py:118-142 separately verifies that `gh` is installed and authenticated, while src/lore/capabilities/check/SKILL.md:24-30 documents the per-prerequisite status result.
+    suggestion: Make the missing-`gh` preflight error include the same install reference as the manifest (`https://cli.github.com/`), alongside `gh auth login`. Keep that URL and the manifest entry synchronized from one shared prerequisite definition if possible.
+
+11 adhere, 6 deviate, 0 not applicable, 0 unclear.
