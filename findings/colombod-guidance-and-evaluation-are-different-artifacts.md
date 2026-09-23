@@ -493,3 +493,78 @@ loud has nothing to say about failures that are loud, correct, and routine.**
 the whole cause of that miss. Four of six defects remain undiagnosed, and the interface still
 has no channel to say what you want — the conclusion of the section above is unchanged by
 this merge.
+
+---
+
+## Root cause: the contrast is anchored to something the defect itself moves
+
+**Evidence: MEASURED** — `octave_band_analysis` read directly from `aud.lib.analyze` for each
+defect fixture and the clean control, at `42ca31f` (PR #3 merged). N=1 per fixture; the
+per-band deltas below are the defect file minus the clean file, same material, same code.
+
+Three of the four remaining misses have **one** cause, and it is not that the measurement
+lacks the information. The information is there and correct. The comparison it is fed
+through is anchored to the file's own median — a reference the defect moves.
+
+**`rumbly`** (+9 dB shelf below 80 Hz). The defect is fully visible in the raw numbers:
+
+| band | rel_median, defect file | rel_median, clean | the defect moved it |
+|---|---|---|---|
+| 31.5 Hz | **−2.93** | −12.16 | **+9.2 dB** |
+| 63.0 Hz | **−2.26** | −8.71 | **+6.5 dB** |
+| 8000 Hz | −7.86 | −8.62 | +0.8 dB |
+
++9.2 dB landed exactly where it was induced. But 31.5 and 63 Hz start so far below the
+midrange that even after a 9 dB lift they are **still below the file's own median**. The
+most deviant band in the list is 8 kHz at −7.86, so that is what the chooser corrected. Its
+reasoning is internally flawless: *"The 8 kHz band sits at −7.86 dB relative to the file's
+median, a sharp dip… 125 Hz through 4 kHz all sit within ±1 dB of median."* It followed its
+instruction correctly. The instruction is wrong.
+
+**`harsh`** (+6 dB @ 6 kHz) fails the same way: 8 kHz moved **+3.4 dB** but still reads
+−5.25 relative to median, so an added excess presents as the second-most-*depressed* band.
+Nothing looks like an excess, and the plan contains no EQ stage at all.
+
+**`thin`** (−8 dB @ 200 Hz) shows the inverse and is the clearest demonstration. Removing
+energy at 200 Hz **lowers the median**, so every untouched band rises against it: 1 kHz
++4.2 dB, 2 kHz +4.8, 4 kHz +4.9 — while the actual hole at 250 Hz reads only −2.5. The plan
+duly cut 1 k, 2 k and 4 k. It corrected the reference frame instead of the defect.
+
+A self-referential contrast cannot see a defect large enough to move the reference, and that
+is exactly the size of defect worth catching. This is the residual the section above named —
+"absolute numbers with no derived contrast" — surviving the fix that added a derived
+contrast, because the contrast was anchored to the file.
+
+### `dull` is a different failure, and a worse one
+
+**Evidence: MEASURED** — same source, N=1 fixture, 2/2 retries.
+
+`dull` is not explained by the anchor at all. Its deficit is enormous, correctly signed, and
+unmissable:
+
+| band | rel_median | the defect moved it |
+|---|---|---|
+| 8000 Hz | **−21.45** | **−12.8 dB** |
+| 16000 Hz | **−42.78** | **−36.6 dB** |
+
+A −42.78 dB hole, and the plan contains **no EQ stage**, twice. Nothing about the median
+anchor hides this one. The signal is screaming and the chooser does nothing with it, which
+means at least one of these four misses has a cause still unidentified.
+
+### What would fix the three, and what it costs
+
+**Evidence: PROPOSAL** — argued from the measurements above. Not implemented, not measured.
+Do not quote as a result.
+
+Anchor the contrast to something the defect cannot move: a **reference contour** rather than
+the file's own median. `aud` already has the machinery — `eq_match` computes a spectral
+profile and `advise` already accepts `reference_path`. A band's deviation against a fixed
+target curve is immune to the failure above, because adding 9 dB at 60 Hz does not move the
+target.
+
+The cost is honest and worth stating: a target contour is **genre- and material-dependent**,
+so it introduces a judgment the current design deliberately avoids. That is the same split
+this finding argues for throughout — the *evaluation* (does this band deviate from the
+reference, by how many dB) belongs in the tool and produces a number; *which reference*
+is the right one for this material is taste, and belongs in guidance. The measurement here
+is one more instance of the split, arrived at from the opposite direction.
