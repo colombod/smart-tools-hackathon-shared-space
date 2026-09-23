@@ -1,0 +1,4 @@
+aud advise: provider=anthropic model=claude-haiku-4-5-20251001
+  - eq: 500 Hz is +5.65 dB above the file's own median, a clear mid-range bump; reducing it by 3.5 dB will flatten the spectrum without over-correcting.
+  - loudness: Integrated LUFS is -12.43, target is -14.0; need to reduce by 1.57 dB to reach target.
+  - limit: True peak is -4.65 dBTP; limiting at -1.0 dBTP will protect against overshoot during loudness adjustment and provide a safety ceiling.

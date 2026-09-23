@@ -1,0 +1,4 @@
+aud advise: provider=anthropic model=claude-haiku-4-5-20251001
+  - eq: 125 Hz is +2.18 dB above the file's median, and 250 Hz is +6.01 dB — a broad low-mid elevation spanning two bands that requires a low shelf to pull down the entire bottom region coherently. Shelving is the right tool for this multi-band tilt.
+  - loudness: Integrated LUFS is -12.26, which is 1.74 dB above the -14.0 LUFS target. Loudness stage will bring it to spec.
+  - limit: True peak is currently -4.44 dBTP, well below the -1.0 dBTP ceiling. The loudness lift will bring peaks closer to ceiling; limiter ensures no overshoot during rendering to -1.0 dBTP target.

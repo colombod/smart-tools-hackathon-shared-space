@@ -1,0 +1,4 @@
+aud advise: provider=anthropic model=claude-haiku-4-5-20251001
+  - eq: Mid-range is elevated: 1 kHz at +4.3 dB, 2 kHz at +4.7 dB, 4 kHz at +4.9 dB rel_median_db, creating a presence peak. Three narrow peaks will tame this without affecting the low mids or high frequencies.
+  - loudness: Current integrated_lufs is -15.1 LUFS; target is -14.0 LUFS. Requires +1.1 dB of gain.
+  - limit: True peak is currently -8.17 dBTP; target ceiling is -1.0 dBTP. Limiter will catch peaks during loudness gain and protect the ceiling.

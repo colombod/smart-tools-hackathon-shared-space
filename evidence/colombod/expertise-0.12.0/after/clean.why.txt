@@ -1,0 +1,3 @@
+aud advise: provider=anthropic model=claude-haiku-4-5-20251001
+  - loudness: Integrated LUFS is -13.95, which is 0.05 LUFS above target of -14.0 LUFS; loudness stage will achieve exact target.
+  - limit: True peak is -6.82 dBTP; limit ensures ceiling of -1.0 dBTP is respected during loudness processing and any subsequent gain changes.

@@ -433,3 +433,63 @@ first reading one raw plan.
 **If you build an evaluation harness for a smart tool, assert that your parser found
 something before you trust what it says it found.** A detector that matches nothing must fail
 loudly, not score zero.
+
+---
+
+## The fix that was already open, and the 20% failure rate that nearly faked a regression
+
+**Evidence: MEASURED** — the same six fixtures re-run after merging `aud` PR #3
+(`42ca31f`), plus 3 retries each on the two runs that errored. N=20 `advise` invocations
+total across both rounds. Raw plans in `evidence/colombod/expertise-0.12.0/after/`.
+
+The 2/6 above was measured with a fix for it **already sitting open in review.** PR #3,
+opened two days earlier and never merged, targeted exactly this: the advisor was never told
+`shelves` exist (so it could only reach for a narrow bell where a broad tilt needed a shelf,
+measured 0 of 6 before); one model tier invented a reflexive 25 Hz high-pass on clean
+material 3/3; and the measurement report handed the model ten absolute dB values whose keys
+sort **lexicographically** under `sort_keys=True`, so `1000.0` lands beside `125.0` and
+`16000.0` beside `2000.0` — a naive "compare to the next entry" walk compares the wrong
+neighbours entirely. That last one is the exact shape of two of my four misses, which cut
+8 kHz for problems at 80 Hz and 200 Hz.
+
+It merged cleanly into current main with no conflicts and green CI. Re-running the probe:
+
+| file | before | after (naive) | after (corrected) | what it does now |
+|---|---|---|---|---|
+| `boxy` | PASS | PASS | **PASS** | 500 Hz −3.5 dB |
+| `muddy` | PASS | *MISS* | **PASS** | 125 Hz −4.5 dB **shelf**; 250 Hz −4.0 dB shelf |
+| `rumbly` | MISS | MISS | MISS | 8000 Hz −4.5 dB |
+| `dull` | MISS | *MISS* | MISS | no EQ stage (2/2 retries) |
+| `harsh` | MISS | MISS | MISS | no EQ stage |
+| `thin` | MISS | MISS | MISS | 1 kHz, 2 kHz, 4 kHz cuts |
+| **score** | **2/6** | **1/6** | **2/6** | |
+
+### The naive reading was wrong, and the reason is the finding
+
+`dull` and `muddy` scored MISS in the second round because **`advise` did not run** — both
+exited 1 with `bad_model_output`. Graded as written, that is a regression from 2/6 to 1/6
+caused by a fix. Retried three times each, `muddy` answers correctly **3/3** and `dull`
+proposes no EQ **2/2 with one further failure**. The corrected score is 2/6, unchanged.
+
+Across everything run today: **`bad_model_output` failed 4 of 20 `advise` invocations — 20%.**
+Always the same shape (`Extra data: line N column 1`), the model emitting trailing content
+after its JSON. There is no retry around a decode that fails one run in five.
+
+That is the more serious finding, and it is invisible to every gate this tool passes.
+Conformance is 16/16. The adherence reviewer reports no such defect. The failure is loud and
+names a remedy, exactly as the spec asks — and a caller still gets a hard failure on one
+invocation in five of a verb that costs a model call. **A spec that requires failures to be
+loud has nothing to say about failures that are loud, correct, and routine.**
+
+### What PR #3 did fix, confirmed
+
+- **The clean control**, which failed with `bad_model_output` in round one, now succeeds and
+  correctly proposes **no EQ stage at all** on material with nothing wrong with it.
+- **Shelves are reachable.** `muddy`'s corrections came back as `shelf` filters — an
+  instrument the chooser demonstrably could not name before (0 of 6). The capability was in
+  `lib.eq` and in `contracts/plan.v1.md` all along; the model was simply never told.
+
+`rumbly` still cuts 8 kHz for a sub-80 Hz problem, so the wrong-neighbour comparison was not
+the whole cause of that miss. Four of six defects remain undiagnosed, and the interface still
+has no channel to say what you want — the conclusion of the section above is unchanged by
+this merge.

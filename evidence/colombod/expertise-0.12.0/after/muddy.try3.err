@@ -1,0 +1,4 @@
+aud advise: provider=anthropic model=claude-haiku-4-5-20251001
+  - eq: 250 Hz is +6.0 dB above the file's own median, the highest peak in the octave band analysis. This narrow elevation in the low-mid region stands out relative to adjacent bands (125 Hz at +2.2 dB, 500 Hz at +2.9 dB) and represents the primary tonal defect.
+  - loudness: Current integrated loudness is -12.26 LUFS; target is -14.0 LUFS. A 1.74 LUFS reduction is needed to meet the target.
+  - limit: Current true peak is -4.44 dBTP; target ceiling is -1.0 dBTP. The limiter ensures no overshoot during loudness adjustment and delivery.
