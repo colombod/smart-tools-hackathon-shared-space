@@ -1,0 +1,1 @@
+{"plan_format":1,"created_with":"aud/0.12.0","stages":[{"stage":"loudness","params":{"target_lufs":-14.0}},{"stage":"limit","params":{"ceiling_dbtp":-1.0}}]}

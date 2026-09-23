@@ -1,0 +1,5 @@
+aud advise: provider=anthropic model=claude-haiku-4-5-20251001
+  - expand: Noise floor is -17.8 dBFS and integrated loudness is -14.1 LUFS, a difference of only 3.7 dB. This is an audible noise floor that will be lifted by subsequent compression and loudness stages. A gentle expander with low ratio and soft knee is appropriate for this material; threshold set 3 dB above floor to reduce noise between phrases without aggressive gating.
+  - eq: The 8 kHz band is -7.86 dB below the file's own median, with a strong neighbour contrast of -5.55 dB, indicating a sharp dip isolated to that region. A narrow peak (inverted as a cut applied inversely, or boost applied to restore) at 8 kHz with moderate Q will restore presence without affecting adjacent bands.
+  - loudness: Integrated loudness is -14.085 LUFS, already within rounding of the -14.0 LUFS target. Loudness stage will finalize the level and ensure stable loudness.
+  - limit: True peak is currently -5.35 dBTP with headroom to -1.0 dBTP target. The limiter protects the ceiling during loudness processing and any subsequent transient peaks.

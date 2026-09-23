@@ -1,0 +1,1 @@
+{"plan_format":1,"created_with":"aud/0.12.0","stages":[{"stage":"loudness","params":{"target_lufs":-14.0}},{"stage":"limit","params":{"ceiling_dbtp":-1.0}},{"stage":"eq","params":{"hpf_hz":null,"lpf_hz":null,"peaks":[{"freq_hz":500.0,"gain_db":-4.0,"q":2.0}],"shelves":[]}}]}

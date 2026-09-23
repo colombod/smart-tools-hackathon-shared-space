@@ -1,0 +1,4 @@
+aud advise: provider=anthropic model=claude-haiku-4-5-20251001
+  - eq: 250 Hz is +6.0 dB above the file's median (neighbour_contrast +3.5 dB confirms a localized bump), and 125 Hz is +2.2 dB above median. These two consecutive bands form a broad lower-midrange elevation that narrows it enough to treat as peaks rather than a shelf; a -4.5 dB reduction at 250 Hz and -1.5 dB at 125 Hz will flatten the tonal imbalance without over-correcting the broader spectrum.
+  - loudness: Integrated LUFS is -12.26, which is 1.74 dB above the target of -14.0 LUFS; loudness stage will reduce level to meet spec.
+  - limit: True peak is currently -4.44 dBTP; loudness reduction will lower peaks further, but limiter at -1.0 dBTP ensures the ceiling is never exceeded after any processing.

@@ -1,0 +1,4 @@
+aud advise: provider=anthropic model=claude-haiku-4-5-20251001
+  - eq: 31.5 Hz is -7.6 dB below median (low rumble), 63 Hz is -5.5 dB below median (subsonic weight); a low shelf at 125 Hz with gentle rolloff tames both. 8000 Hz is +3.7 dB above median (upper midrange sharpness); a narrow peak reduces sibilance glare without affecting 4 kHz (which sits at +4.9 dB but blends with the 2–4 kHz presence peak). 500–4000 Hz form a coherent presence peak (+2.5 to +4.9 dB rel_median) that is tonal colour, not a defect to EQ.
+  - loudness: Integrated LUFS is -15.1, target is -14.0; loudness stage will raise by approximately 1.1 dB to reach target.
+  - limit: True peak is currently -8.17 dBTP; loudness gain will lift it. Limiter ceiling at -1.0 dBTP prevents overshoot and guarantees loudness target compliance.

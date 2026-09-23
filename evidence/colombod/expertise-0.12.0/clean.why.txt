@@ -1,0 +1,1 @@
+{"error": {"code": "bad_model_output", "message": "Model response was not valid JSON: Extra data: line 15 column 1 (char 497)", "remedy": "Retry advise/master, or build the chain by hand with the deterministic stage verbs."}}

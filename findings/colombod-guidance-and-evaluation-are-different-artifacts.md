@@ -333,3 +333,103 @@ which is the thing neither artifact type provides alone.
 - **No cost accounting exists on any `aud` surface**, so this experiment's ~135 model calls and
   ~350 s of wall time cannot be converted to a spend figure. That is a gap in the tool worth
   naming for any model-backed verb, and it means I cannot tell you what the probe costs to run.
+
+---
+
+## Replication at 0.12.0: the gap survived two releases, and the model is not the problem
+
+**Evidence: MEASURED** — the same induce-a-defect / grade-the-parameters probe re-run against
+`aud` **0.12.0** (six defects, one clean control), plus a direct question to the same backend
+outside the tool. N=1 trial per defect, N=1 direct question. Raw plans and per-stage reasoning
+in `evidence/colombod/expertise-0.12.0/`.
+
+The probe above measured 0.11.1. Two releases later — after the resample/downmix work and
+three rounds of spec-adherence fixes — I re-ran a smaller version of it. **The gap is still
+there.** Six defects were induced into pink-noise-plus-harmonics programme material, each
+verified present by Welch PSD before anything was asked to diagnose it:
+
+| file | induced | measured delta vs clean, in its own band |
+|---|---|---|
+| `boxy` | +6 dB @ 400 Hz | **+5.6 dB** in 300–550 Hz |
+| `rumbly` | +9 dB shelf < 80 Hz | **+7.6 dB** in 20–80 Hz |
+| `dull` | 4th-order LPF @ 5 kHz | **−28.7 dB** in 8–16 kHz |
+| `harsh` | +6 dB @ 6 kHz | **+5.4 dB** in 5–7.5 kHz |
+| `muddy` | +6 dB @ 250 Hz | **+5.6 dB** in 180–350 Hz |
+| `thin` | −8 dB @ 200 Hz | **−7.7 dB** in 150–280 Hz |
+
+Graded on the returned plan's **stage parameters**, never its prose:
+
+| file | grade | every EQ move the plan makes |
+|---|---|---|
+| `boxy` | **PASS** | 500 Hz −4.0 dB |
+| `muddy` | **PASS** | 250 Hz −4.5 dB; 125 Hz −1.5 dB |
+| `rumbly` | MISS | 8000 Hz −4.5 dB |
+| `dull` | MISS | *no EQ stage at all* |
+| `harsh` | MISS | *no EQ stage at all* |
+| `thin` | MISS | 8000 Hz −3.5 dB; 125 Hz −1.2 dB |
+
+**2 / 6.** Better than 0.11.1's 0/24, and the two passes are genuinely good — `muddy` was
+corrected at exactly the induced frequency, and `boxy`'s reasoning names the band correctly
+("The 500 Hz band is +5.65 dB above the file's own median"). But `rumbly` cut 8 kHz for a
+sub-80 Hz problem with no high-pass; `dull` and `harsh` emitted no EQ stage at all against a
+28.7 dB HF deficit and a 5.4 dB peak; `thin` needed a boost at 200 Hz and cut 125 Hz instead.
+
+### The new arm: ask the same model directly, and the gap moves
+
+The earlier probe fed intent through `aud`'s own prompt. This one asks the model **outside the
+tool entirely** — same backend, same model (`anthropic` / `claude-haiku-4-5-20251001`, as the
+tool itself reports on stderr), one question, no measurements attached:
+
+```
+{"boxy":   {"band":"500Hz", "fix":"cut"},     {"rumbly": {"band":"80Hz",  "fix":"cut"},
+ "dull":   {"band":"4kHz",  "fix":"boost"},    "harsh":  {"band":"3kHz",  "fix":"cut"},
+ "muddy":  {"band":"250Hz", "fix":"cut"},      "thin":   {"band":"200Hz", "fix":"boost"}}
+```
+
+Six for six on direction, and on band for five of six (`harsh` answers 3 kHz — the classic
+harshness region — where this fixture's defect was at 6 kHz). `rumbly` → 80 Hz cut, `thin` →
+200 Hz boost, `muddy` → 250 Hz cut: exactly the corrections the tool failed to make.
+
+**The expertise is in the model. The tool scores 2/6 on defects whose vocabulary that same
+model maps correctly 6/6, because the tool never asks.** `advise`'s signature is still
+`(path, *, target_lufs, ceiling_dbtp, reference_path, model, backend)` — there is no channel
+for intent, so the only question ever put to the model is "here are measurements, pick a
+chain". This is an **interface** finding, not a model-capability one, and it is now localised
+by construction rather than argued.
+
+### A robustness defect the control file found
+
+The clean control — the one file with nothing wrong with it — **failed**:
+
+```json
+{"error": {"code": "bad_model_output",
+  "message": "Model response was not valid JSON: Extra data: line 15 column 1 (char 497)",
+  "remedy": "Retry advise/master, or build the chain by hand with the deterministic stage verbs."}}
+```
+
+1 of 7 runs, on well-formed input, from a model that emitted trailing content after its JSON.
+The failure is loud and names a remedy, which is the spec behaving as intended. But a
+model-backed verb with no retry around a known-flaky decode shape will fail this way for a
+caller, and nothing in the conformance kit or the adherence reviewer can see a defect that
+only appears once every seven runs.
+
+### The methodological warning, which cost me the first result
+
+**Evidence: OBSERVED** — my own first grader, N=1.
+
+My first grader scored **6/6 MISS** and printed `all eq moves: none` for every file. That
+result was entirely false. The grader looked for `peak` / `freq` / `gain` / `hpf`; the real
+schema is `peaks[].freq_hz`, `peaks[].gain_db`, `hpf_hz`, `shelves[]`. It matched nothing,
+and reported matching nothing as total failure — with exactly the same confidence as the
+correct grader that later found 2/6.
+
+This is the repository's own lesson one level up. We say a boolean is not a measurement and a
+hand-written mock can only confirm what you assumed. A **grader** built from field names you
+guessed has the same defect, and it is more dangerous than a bad test: a broken test usually
+goes red and gets looked at, whereas a broken grader produces a plausible, publishable,
+completely wrong number. The only thing that caught it was refusing to write down 0/6 without
+first reading one raw plan.
+
+**If you build an evaluation harness for a smart tool, assert that your parser found
+something before you trust what it says it found.** A detector that matches nothing must fail
+loudly, not score zero.

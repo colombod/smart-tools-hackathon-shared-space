@@ -1,0 +1,4 @@
+aud advise: provider=anthropic model=claude-haiku-4-5-20251001
+  - loudness: Current integrated LUFS is -12.43, which is 1.57 dB above the target of -14.0 LUFS. Loudness stage will bring the mix to the required level.
+  - limit: Current true peak is -4.65 dBTP; after loudness lift of ~1.6 dB the peak will approach -3.0 dBTP, exceeding the -1.0 dBTP ceiling. Limiter protects against clipping.
+  - eq: The 500 Hz band is +5.65 dB above the file's own median, a clear isolated peak. The 250 Hz band is +2.51 dB and 1000 Hz is +1.11 dB, but 500 Hz stands alone as the dominant defect. A narrow peak at 500 Hz with moderate Q=2.0 and -4.0 dB gain targets this excess without over-correcting neighbouring bands.
