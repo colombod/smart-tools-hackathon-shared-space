@@ -92,9 +92,81 @@ whether anyone else has already hit this and solved it differently.
 
 ---
 
+## In flight — being tested by building
+
+### 7. What does it mean for one smart tool to depend on another?
+
+**Status: IN PROGRESS. Nothing built yet, so nothing here is a finding.** Recorded now
+because the design questions surfaced before the code, and the answers should be written
+against what building actually does rather than reconstructed afterwards.
+
+This is **ROADMAP q3** ("how other products consume smart tools") from an angle the question
+does not obviously anticipate: not a *host* consuming a tool, but a **tool consuming a tool**.
+
+**What is being built:** `audio-mix`, a multi-track mixing and spectral-ducking tool that
+depends on `aud`
+([amplifier-smart-tools-audio](https://github.com/colombod/amplifier-smart-tools-audio)).
+The dependency is deliberately **both** kinds at once, which is what makes it interesting:
+
+- **internal** — `audio-mix` imports `aud` as a library inside its own verbs;
+- **compositional** — the user chains at the invocation level: `aud` (process stems) →
+  `audio-mix` (mix) → `aud` (master).
+
+So `aud` sits **before and after** `audio-mix`. A sandwich, not a chain.
+
+**Evidence: OBSERVED** — source read of `aud` at commit `818ac7d`, file:line below. No
+measurement yet; nothing has been built against it.
+
+The first concrete obstacle is already visible in the source, and it is not the one we
+expected. **`aud` has no promised library API.** It promises `contracts/plan.v1.md`,
+`contracts/regions.v1.md` and its CLI surface — its own docs say *"the contract document is
+the interface; CLI flag spellings are ergonomics, not promised."* The `dsp/` boundary rule
+in its `AGENTS.md` §8 (arrays in, arrays out, no config, no filesystem) is a **contributor
+design rule**, not a stability guarantee to an importer.
+
+Plenty of names are public by spelling — `compress` (`dsp/dynamics.py:109`), `gate`
+(`dsp/gate.py:310`), `brickwall` (`dsp/limiter.py:85`), `detect_transients`
+(`dsp/detect.py:169`), `resolve_points` (`dsp/resolve.py:368`), `crossfade`
+(`dsp/edit.py:74`). But *importable* is not *promised*. And several pieces the dependent
+tool specifically wants are private: `_static_gain_reduction_db` (`dsp/dynamics.py:73`),
+`_gate_curve` (`dsp/gate.py:110`), `_smooth_gain_db` (`dsp/dynamics.py:94`),
+`_hold_attack_release_db` (`dsp/gate.py:177`), `_align_to_zero_crossing`
+(`dsp/resolve.py:148`).
+
+**Evidence: JUDGMENT** — argued from the above, not measured. The other arm was not built.
+
+The spec says **the library is the tool** and the CLI is a thin adapter over it. But the
+manifest, the descriptor and the conformance kit all orient around the CLI and the manifest.
+Nothing asks a tool to declare its **stable import surface**. If tools are meant to depend on
+each other as libraries — which the spec's own framing invites — something has to say which
+imports are promised. The moment a sibling imports `aud.dsp`, `aud` loses the freedom to
+refactor it, and today that freedom is unpriced because nothing external depends on it.
+
+**Named experiments — what would settle each part:**
+
+1. **Does the conformance kit contemplate a dependent tool at all?** Run
+   `check-conformance` against `audio-mix` once it exists. A rule that passes **vacuously**
+   is itself the finding. Specifically: the non-negotiable is *"deterministic capabilities
+   work with zero provider credentials"* — it says nothing about **zero sibling tools**.
+2. **Does `uv tool install X` expose a dependency's console scripts?** Expected no; if so, a
+   tool that shells out to a sibling's CLI produces a silently broken install — library
+   present, binary absent. Must be checked in a container, not reasoned about.
+3. **Is there any skill-to-skill dependency mechanism?** If the Agent Skills spec has no
+   `requires:`, then the fifth rung of the install ladder (`npx skills add …`) is the only
+   one with no transitive story, and the companion tool must be named in prose.
+4. **Does `SMART_TOOL.md` have anywhere to declare a sibling dependency?** If not, does it
+   need one, or is a plain package dependency sufficient?
+
+**What we cannot yet claim.** Whether any existing catalog entry already declares a
+dependency on another smart tool is **not verified**. If one does, this is not the first case
+and the framing above is wrong.
+
+---
+
 ## ROADMAP questions we did not touch
 
-Stated plainly so nobody assumes they were covered.
+Stated plainly so nobody assumes they were covered. **q3 is no longer on this list** — see
+§7 above, in flight.
 
 | # | question | our position |
 |---|---|---|
