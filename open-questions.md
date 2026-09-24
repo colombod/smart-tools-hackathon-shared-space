@@ -142,24 +142,84 @@ each other as libraries — which the spec's own framing invites — something h
 imports are promised. The moment a sibling imports `aud.dsp`, `aud` loses the freedom to
 refactor it, and today that freedom is unpriced because nothing external depends on it.
 
-**Named experiments — what would settle each part:**
+### Corrections and confirmations — spec read, 2026-09-24
 
-1. **Does the conformance kit contemplate a dependent tool at all?** Run
-   `check-conformance` against `audio-mix` once it exists. A rule that passes **vacuously**
-   is itself the finding. Specifically: the non-negotiable is *"deterministic capabilities
-   work with zero provider credentials"* — it says nothing about **zero sibling tools**.
-2. **Does `uv tool install X` expose a dependency's console scripts?** Expected no; if so, a
-   tool that shells out to a sibling's CLI produces a silently broken install — library
-   present, binary absent. Must be checked in a container, not reasoned about.
-3. **Is there any skill-to-skill dependency mechanism?** If the Agent Skills spec has no
-   `requires:`, then the fifth rung of the install ladder (`npx skills add …`) is the only
-   one with no transitive story, and the companion tool must be named in prose.
-4. **Does `SMART_TOOL.md` have anywhere to declare a sibling dependency?** If not, does it
-   need one, or is a plain package dependency sufficient?
+**Evidence: OBSERVED** — specs and source read at pinned revisions:
+`microsoft/amplifier-smart-tools@61e59d5`, `microsoft/amplifier-smart-tools-catalog@7f6379e`,
+`vercel-labs/skills@7407f38`, `astral-sh/uv@3db6652`. Nothing installed, nothing run.
 
-**What we cannot yet claim.** Whether any existing catalog entry already declares a
-dependency on another smart tool is **not verified**. If one does, this is not the first case
-and the framing above is wrong.
+**CORRECTION — we are not first, and the "first case" framing above was wrong.**
+`showrun` (`robotdad/amplifier-smart-tool-showrun` 0.1.0) already declares the catalog tool
+**Stories** as an optional `requires` entry. It does **not** take it as a package dependency:
+the caller passes a path to a separate interpreter (`--python /absolute/stories/bin/python`),
+and the version constraint lives in the entry's `purpose` **prose** because the schema has
+nowhere else to put it. So `audio-mix` would be the **second** catalog tool to depend on
+another at all, and the **first to depend on one as a library/package**. Keep the distinction;
+the weaker claim is the true one.
+
+*(Non-qualifying near-cases: `fact-check` mentions `deep-research` but its real dependency is
+`research-core`, a shared library rather than a smart tool. `tmux`'s `requires: tmux` is the
+binary.)*
+
+**CONFIRMED — Agent Skills has no skill-to-skill dependency mechanism.** The frontmatter is a
+**closed set of six fields**: `name`, `description`, `license`, `compatibility`, `metadata`,
+`allowed-tools`. The reference validator enforces it —
+`ALLOWED_FIELDS = {...}`, and anything else errors with *"Unexpected fields in frontmatter"*.
+So **inventing a `requires:` key would fail `skills-ref validate`**. `metadata` is explicitly
+semantics-free. `npx skills add` resolves nothing transitively (grepped `add.ts`, `skills.ts`,
+`installer.ts`, `skill-lock.ts`, `update.ts` — no dependency concept anywhere), though one
+command *can* install several skills found in one repo.
+=> The prose-only companion note is not a stopgap. It is the **only** conforming option.
+
+**CONFIRMED — `description` cap is 1024, and host behaviour past it genuinely diverges.**
+The spec's own lenient-validation guidance covers an over-length *name* and a *missing*
+description but **says nothing about an over-length description**. Observed: `skills-ref`
+errors; Amplifier warns and loads anyway; `npx skills` does not check; one third-party report
+says Pi drops the skill. A guard test is the right call precisely because the answer is
+host-dependent.
+
+**CONFIRMED — `uv tool install X` does not expose a dependency's executables.** Verbatim from
+uv's docs: *"Executables provided by dependencies of tool packages are not installed."* The
+documented fix is `--with-executables-from`, which differs from `--with` exactly in this.
+=> A smart tool that shells out to a sibling's CLI **does** produce a silently broken install
+under the ordinary install command.
+
+**NEW HAZARD, not previously on our radar.** The name `aud` on PyPI is **someone else's
+package** (`zdhoward/aud` 2.0.1, a different audio tool). Any bare `aud` requirement that
+falls back to PyPI installs the wrong project. Compounding it: `tool.uv.sources` is
+**uv-only** — *"Sources are only respected by uv"* — so a non-uv consumer resolving
+`dependencies = ["aud"]` gets the wrong package. A direct PEP 508 git reference avoids it.
+And a git-URL dependency means `audio-mix` **could never be published to PyPI** as-is.
+
+**The spec ambiguity that has to be resolved by whoever builds this.** `requires` is for
+environment prerequisites, and the manifest spec says plainly: *"Language runtimes and
+package dependencies are not listed here. Those belong to the packaging system, which already
+resolves them."* But `aud` is **both** a package and a smart tool. Import it as a library and
+that sentence says it does not go in `requires`; shell out to it and it is an environment
+prerequisite that does. The spec does not say which rule wins. `invocation.md` leans one way
+without ruling: *"Capabilities… within one tool or across several, compose by writing a script
+against the libraries, where results are typed return values rather than text to parse."*
+
+**The conformance kit cannot express any of this — three concrete refusals, read from the
+rule code.** `manifest-fields-closed` would **FAIL** a new top-level `depends_on`.
+`manifest-requires-shape` is `extra="forbid"`, so adding `version:` or `kind: smart-tool` to a
+`requires` entry **FAILS**. And `install:` **FAILS** if it begins with `uv`/`pip`/`npx`… or
+contains whitespace, so `install: uv tool install git+…` is rejected by design. A dependent
+tool declared purely through `pyproject` passes every dependency-related rule **vacuously** —
+no rule reads package dependencies at all. The kit also *"never installs the tool under
+test"*, so if the CLI is absent all six runtime rules **SKIP** rather than FAIL.
+
+**Named experiments still open — these need running, not reading:**
+
+1. **Run the kit against `audio-mix` once it exists** and record which rules pass vacuously.
+   The non-negotiable is *"deterministic capabilities work with zero provider credentials"* —
+   it says nothing about **zero sibling tools**.
+2. **Does `--with-executables-from` accept a git-URL requirement**, and is it safe against
+   PyPI's `aud`? Undocumented; needs a container run.
+3. **Is a transitive dependency's CLI reachable via `uv run`**, or from inside a `uv tool`
+   environment? uv's docs never say. Needs a container run.
+4. **Where does a minimum sibling version live?** Nothing in the manifest schema can carry
+   one. `showrun` put it in prose. Is prose the convention, or the gap?
 
 ---
 
